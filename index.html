@@ -392,7 +392,7 @@ select.input{min-width:120px;}
       <div class="brand-text"><div class="t1">吊車請款管理</div><div class="t2">Crane Invoice Tool</div></div>
     </div>
     <ul class="nav-list" id="navList"></ul>
-    <div class="sidebar-footer">資料僅儲存在此瀏覽器中<br>請定期於「備份還原」匯出</div>
+    <div class="sidebar-footer">資料儲存於雲端，僅您能透過此專屬連結存取，並與其他公司完全獨立。請勿轉傳此連結。<br><br>吊車・請款系統｜本內容版權為 雅茜（Line：0983117041）所有。僅供個人使用，未經授權不得以任何形式複製、公開分享、轉載或轉售，違者將依法追究相關責任。</div>
   </aside>
 
   <main class="main-content" id="mainContent"></main>
@@ -406,6 +406,7 @@ select.input{min-width:120px;}
 <div id="toast" class="toast"></div>
 <input type="file" id="importFileInput" accept="application/json" style="display:none">
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
 "use strict";
@@ -448,74 +449,45 @@ const ICONS = {
 };
 
 /* ============================================================
-   STORAGE
+   STORAGE (Supabase cloud database)
 ============================================================ */
-const LS_ORDERS = 'crane_invoice_orders_v1';
-const LS_CLIENTS = 'crane_invoice_clients_v1';
-const LS_EXPENSES = 'crane_invoice_expenses_v1';
-const LS_COMPANY = 'crane_invoice_company_v1';
-const LS_CREW = 'crane_invoice_crew_v1';
-const LS_VEHICLE_LIST = 'crane_invoice_vehicle_list_v1';
-const LS_PRICING = 'crane_invoice_pricing_v1';
-const LS_SPECIAL_PRICING = 'crane_invoice_special_pricing_v1';
-const LS_VENDOR_RATES = 'crane_invoice_vendor_rates_v1';
-const LS_INVOICE_NUMBERS = 'crane_invoice_invoice_numbers_v1';
-const LS_ENVELOPE_SETTINGS = 'crane_invoice_envelope_settings_v1';
+const SUPABASE_URL = 'https://gvfflbyskurmesunbkyp.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_rUit87g_CnVh7elwzH3EOQ_pn5bSOkA';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function loadOrders(){ try{ return JSON.parse(localStorage.getItem(LS_ORDERS)) || []; }catch(e){ return []; } }
-function loadClients(){ try{ return JSON.parse(localStorage.getItem(LS_CLIENTS)) || []; }catch(e){ return []; } }
-function loadExpenses(){ try{ return JSON.parse(localStorage.getItem(LS_EXPENSES)) || []; }catch(e){ return []; } }
-function loadCompanyInfo(){ try{ return JSON.parse(localStorage.getItem(LS_COMPANY)) || {}; }catch(e){ return {}; } }
-function loadCrewList(){
-  const raw = localStorage.getItem(LS_CREW);
-  if(raw===null){
-    const orders = loadOrders();
-    const seed = Array.from(new Set(orders.flatMap(o=>[o.driver,o.assistant]).filter(Boolean).map(s=>s.trim()))).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
-    localStorage.setItem(LS_CREW, JSON.stringify(seed));
-    return seed;
-  }
-  try{ return JSON.parse(raw) || []; }catch(e){ return []; }
+function collectPersistedData(){
+  return {
+    orders: state.orders,
+    clients: state.clients,
+    expenses: state.expenses,
+    companyInfo: state.companyInfo,
+    crewList: state.crewList,
+    vehicleList: state.vehicleList,
+    pricingRules: state.pricingRules,
+    specialPricing: state.specialPricing,
+    vendorRates: state.vendorRates,
+    invoiceNumbers: state.invoiceNumbers,
+    envelopeSettings: state.envelopeSettings
+  };
 }
-function loadVehicleList(){
-  const raw = localStorage.getItem(LS_VEHICLE_LIST);
-  if(raw===null){
-    const orders = loadOrders();
-    const seed = Array.from(new Set(orders.map(o=>o.vehicleNo).filter(Boolean).map(s=>s.trim()))).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
-    localStorage.setItem(LS_VEHICLE_LIST, JSON.stringify(seed));
-    return seed;
-  }
-  try{ return JSON.parse(raw) || []; }catch(e){ return []; }
+
+function persistToCloud(){
+  return sb.from('app_data')
+    .update({ data: collectPersistedData(), updated_at: new Date().toISOString() })
+    .eq('id', 'default')
+    .then(function(res){ if(res.error){ console.error(res.error); showToast('雲端儲存失敗，請檢查網路連線'); } });
 }
-function loadPricing(){
-  const raw = localStorage.getItem(LS_PRICING);
-  if(raw===null){
-    const defaults = [
-      { id:uid(), tonnage:25, firstHour:4000, perHour:2000, dailyCap:13000, overtimeStart:'17:00', overtimeEnd:'', overtimeRate:2500 }
-    ];
-    localStorage.setItem(LS_PRICING, JSON.stringify(defaults));
-    return defaults;
-  }
-  try{ return JSON.parse(raw) || []; }catch(e){ return []; }
-}
-function loadSpecialPricing(){ try{ return JSON.parse(localStorage.getItem(LS_SPECIAL_PRICING)) || []; }catch(e){ return []; } }
-function loadVendorRates(){ try{ return JSON.parse(localStorage.getItem(LS_VENDOR_RATES)) || []; }catch(e){ return []; } }
-function loadInvoiceNumbers(){ try{ return JSON.parse(localStorage.getItem(LS_INVOICE_NUMBERS)) || {}; }catch(e){ return {}; } }
-function loadEnvelopeSettings(){
-  try{
-    const v = JSON.parse(localStorage.getItem(LS_ENVELOPE_SETTINGS));
-    return v || { orientation:'horizontal', length:22.9, width:10.5 };
-  }catch(e){ return { orientation:'horizontal', length:22.9, width:10.5 }; }
-}
-function saveOrders(){ localStorage.setItem(LS_ORDERS, JSON.stringify(state.orders)); }
-function saveClients(){ localStorage.setItem(LS_CLIENTS, JSON.stringify(state.clients)); }
-function saveExpenses(){ localStorage.setItem(LS_EXPENSES, JSON.stringify(state.expenses)); }
-function saveCompanyInfo(){ localStorage.setItem(LS_COMPANY, JSON.stringify(state.companyInfo)); }
-function saveCrewList(){ localStorage.setItem(LS_CREW, JSON.stringify(state.crewList)); }
-function saveVehicleList(){ localStorage.setItem(LS_VEHICLE_LIST, JSON.stringify(state.vehicleList)); }
-function savePricing(){ localStorage.setItem(LS_PRICING, JSON.stringify(state.pricingRules)); }
-function saveSpecialPricing(){ localStorage.setItem(LS_SPECIAL_PRICING, JSON.stringify(state.specialPricing)); }
-function saveVendorRates(){ localStorage.setItem(LS_VENDOR_RATES, JSON.stringify(state.vendorRates)); }
-function saveInvoiceNumbers(){ localStorage.setItem(LS_INVOICE_NUMBERS, JSON.stringify(state.invoiceNumbers)); }
+
+function saveOrders(){ persistToCloud(); }
+function saveClients(){ persistToCloud(); }
+function saveExpenses(){ persistToCloud(); }
+function saveCompanyInfo(){ persistToCloud(); }
+function saveCrewList(){ persistToCloud(); }
+function saveVehicleList(){ persistToCloud(); }
+function savePricing(){ persistToCloud(); }
+function saveSpecialPricing(){ persistToCloud(); }
+function saveVendorRates(){ persistToCloud(); }
+function saveInvoiceNumbers(){ persistToCloud(); }
 function invoiceKey(clientName, month){ return (clientName||'').trim()+'__'+(month||''); }
 function getInvoiceNumber(clientName, month){ return state.invoiceNumbers[invoiceKey(clientName, month)] || ''; }
 function setInvoiceNumber(clientName, month, invoiceNo){
@@ -524,20 +496,47 @@ function setInvoiceNumber(clientName, month, invoiceNo){
   else { delete state.invoiceNumbers[key]; }
   saveInvoiceNumbers();
 }
-function saveEnvelopeSettings(){ localStorage.setItem(LS_ENVELOPE_SETTINGS, JSON.stringify(state.envelopeSettings)); }
+function saveEnvelopeSettings(){ persistToCloud(); }
+
+function seedCrewListFromOrders(){
+  return Array.from(new Set(state.orders.flatMap(o=>[o.driver,o.assistant]).filter(Boolean).map(s=>s.trim()))).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+}
+function seedVehicleListFromOrders(){
+  return Array.from(new Set(state.orders.map(o=>o.vehicleNo).filter(Boolean).map(s=>s.trim()))).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+}
+function defaultPricingRules(){
+  return [{ id:uid(), tonnage:25, firstHour:4000, perHour:2000, dailyCap:13000, overtimeStart:'17:00', overtimeEnd:'', overtimeRate:2500 }];
+}
+
+async function loadFromCloud(){
+  const res = await sb.from('app_data').select('data').eq('id','default').single();
+  if(res.error) throw res.error;
+  const d = (res.data && res.data.data) || {};
+  state.orders = Array.isArray(d.orders) ? d.orders : [];
+  state.clients = Array.isArray(d.clients) ? d.clients : [];
+  state.expenses = Array.isArray(d.expenses) ? d.expenses : [];
+  state.companyInfo = (d.companyInfo && typeof d.companyInfo==='object') ? d.companyInfo : {};
+  state.crewList = Array.isArray(d.crewList) ? d.crewList : seedCrewListFromOrders();
+  state.vehicleList = Array.isArray(d.vehicleList) ? d.vehicleList : seedVehicleListFromOrders();
+  state.pricingRules = (Array.isArray(d.pricingRules) && d.pricingRules.length) ? d.pricingRules : defaultPricingRules();
+  state.specialPricing = Array.isArray(d.specialPricing) ? d.specialPricing : [];
+  state.vendorRates = Array.isArray(d.vendorRates) ? d.vendorRates : [];
+  state.invoiceNumbers = (d.invoiceNumbers && typeof d.invoiceNumbers==='object') ? d.invoiceNumbers : {};
+  state.envelopeSettings = (d.envelopeSettings && typeof d.envelopeSettings==='object') ? d.envelopeSettings : { orientation:'horizontal', length:22.9, width:10.5 };
+}
 
 const state = {
-  orders: loadOrders(),
-  clients: loadClients(),
-  expenses: loadExpenses(),
-  companyInfo: loadCompanyInfo(),
-  crewList: loadCrewList(),
-  vehicleList: loadVehicleList(),
-  pricingRules: loadPricing(),
-  specialPricing: loadSpecialPricing(),
-  vendorRates: loadVendorRates(),
-  invoiceNumbers: loadInvoiceNumbers(),
-  envelopeSettings: loadEnvelopeSettings(),
+  orders: [],
+  clients: [],
+  expenses: [],
+  companyInfo: {},
+  crewList: [],
+  vehicleList: [],
+  pricingRules: [],
+  specialPricing: [],
+  vendorRates: [],
+  invoiceNumbers: {},
+  envelopeSettings: { orientation:'horizontal', length:22.9, width:10.5 },
   page: 'stats',
   filters: { search:'', month:'all' },
   clientFilters: { search:'', type:'all' },
@@ -3028,8 +3027,18 @@ document.addEventListener('keydown', function(e){
 /* ============================================================
    INIT
 ============================================================ */
-renderNav();
-render();
+(async function initApp(){
+  document.getElementById('mainContent').innerHTML = '<div class="empty-state"><div class="icon-badge">'+ICONS.stats+'</div><h3>資料載入中…</h3><p>正在從雲端資料庫讀取您的資料，請稍候片刻。</p></div>';
+  try{
+    await loadFromCloud();
+  }catch(e){
+    console.error(e);
+    document.getElementById('mainContent').innerHTML = '<div class="empty-state"><div class="icon-badge">'+ICONS.warn+'</div><h3>無法連線到雲端資料庫</h3><p>請檢查網路連線後重新整理頁面再試一次。</p></div>';
+    return;
+  }
+  renderNav();
+  render();
+})();
 
 })();
 </script>
