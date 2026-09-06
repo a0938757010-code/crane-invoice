@@ -1,0 +1,3037 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>吊車請款管理工具</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+:root{
+  --pink:#C9938A; --soft-pink:#E8C4BC; --light-pink:#F5E6E3;
+  --blue:#7A9BAD; --soft-blue:#B8CFDA; --light-blue:#E3EDF3;
+  --sage:#9AAE9B; --light-sage:#E8F0E8;
+  --cream:#FAF3EE; --bg:#FAFAF8; --dark:#37352F; --medium:#5A5248; --gray:#9B9A97;
+
+  --radius-lg:18px; --radius:14px; --radius-sm:10px;
+  --shadow-sm:0 1px 3px rgba(55,53,47,0.06);
+  --shadow:0 4px 14px rgba(55,53,47,0.08);
+  --shadow-lg:0 10px 30px rgba(55,53,47,0.12);
+  --border:1px solid rgba(55,53,47,0.09);
+  --topbar-h:56px; --bottomnav-h:64px; --sidebar-w:236px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--dark);
+  font-family:'Noto Sans TC', -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+h1,h2,h3{margin:0; font-weight:700; letter-spacing:0.02em;}
+p{margin:0;}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+a{color:inherit;}
+::selection{background:var(--soft-pink); color:var(--dark);}
+
+/* ---------- Layout shell ---------- */
+.app-shell{display:flex; min-height:100vh;}
+
+.sidebar{
+  width:var(--sidebar-w);
+  flex-shrink:0;
+  background:var(--cream);
+  border-right:var(--border);
+  display:flex;
+  flex-direction:column;
+  padding:26px 16px;
+  position:sticky;
+  top:0;
+  height:100vh;
+}
+.brand{display:flex; align-items:center; gap:10px; padding:4px 10px 28px 10px;}
+.brand-mark{
+  width:38px; height:38px; border-radius:11px;
+  background:linear-gradient(135deg, var(--pink), var(--blue));
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  box-shadow:var(--shadow-sm);
+}
+.brand-mark svg{width:20px; height:20px; stroke:#fff;}
+.brand-text{line-height:1.25;}
+.brand-text .t1{font-size:15px; font-weight:700; color:var(--dark);}
+.brand-text .t2{font-size:11.5px; color:var(--gray); font-weight:500;}
+
+.nav-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px;}
+.nav-item{
+  display:flex; align-items:center; gap:12px;
+  padding:11px 14px; border-radius:var(--radius-sm);
+  color:var(--medium); font-size:14.5px; font-weight:500;
+  border-left:3px solid transparent;
+  transition:background .15s ease, color .15s ease;
+}
+.nav-item svg{width:19px; height:19px; stroke:currentColor; flex-shrink:0;}
+.nav-item:hover{background:rgba(255,255,255,0.6);}
+.nav-item.active{
+  background:#fff; color:var(--pink); font-weight:700;
+  border-left:3px solid var(--pink);
+  box-shadow:var(--shadow-sm);
+}
+.sidebar-footer{margin-top:auto; padding:10px; font-size:11px; color:var(--gray); line-height:1.6;}
+
+.topbar{
+  display:none;
+  position:fixed; top:0; left:0; right:0; height:var(--topbar-h);
+  background:var(--cream); border-bottom:var(--border);
+  align-items:center; gap:10px; padding:0 16px; z-index:40;
+}
+.topbar .brand-mark{width:30px; height:30px; border-radius:9px;}
+.topbar .brand-mark svg{width:16px; height:16px;}
+.topbar .brand-text .t1{font-size:14px;}
+.topbar .brand-text .t2{display:none;}
+
+.main-content{
+  flex:1; min-width:0;
+  padding:34px 40px 60px 40px;
+  max-width:1180px;
+}
+
+.bottomnav{
+  display:none;
+  position:fixed; left:0; right:0; bottom:0; height:var(--bottomnav-h);
+  background:#fff; border-top:var(--border);
+  z-index:40;
+  padding-bottom:env(safe-area-inset-bottom, 0);
+}
+.bottomnav-inner{display:flex; height:100%;}
+.bn-item{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; color:var(--gray); font-size:10.5px; font-weight:500;
+}
+.bn-item svg{width:21px; height:21px; stroke:currentColor;}
+.bn-item.active{color:var(--pink); font-weight:700;}
+
+@media (max-width:899px){
+  .sidebar{display:none;}
+  .topbar{display:flex;}
+  .bottomnav{display:block;}
+  .main-content{padding:calc(var(--topbar-h) + 20px) 16px calc(var(--bottomnav-h) + 28px) 16px; max-width:100%;}
+}
+
+/* ---------- Page header ---------- */
+.page-head{display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:24px;}
+.page-head h1{font-size:24px; color:var(--dark);}
+.page-head .sub{font-size:13px; color:var(--gray); margin-top:5px; font-weight:500;}
+
+.btn{
+  display:inline-flex; align-items:center; gap:7px;
+  border:none; border-radius:var(--radius-sm);
+  padding:10px 18px; font-size:14px; font-weight:700;
+  transition:transform .1s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.btn svg{width:16px; height:16px; stroke:currentColor;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--pink); color:#fff; box-shadow:0 3px 10px rgba(201,147,138,0.35);}
+.btn-primary:hover{opacity:0.92;}
+.btn-secondary{background:#fff; color:var(--medium); border:var(--border);}
+.btn-secondary:hover{background:var(--light-pink);}
+.btn-ghost{background:transparent; color:var(--medium);}
+.btn-ghost:hover{background:rgba(55,53,47,0.05);}
+.btn-danger{background:#fff; color:#B4574C; border:1px solid rgba(180,87,76,0.35);}
+.btn-danger:hover{background:#FBEDEB;}
+.btn-block{width:100%; justify-content:center;}
+.btn-sm{padding:7px 12px; font-size:12.5px;}
+
+/* ---------- Cards ---------- */
+.card{
+  background:#fff; border-radius:var(--radius-lg); border:var(--border);
+  box-shadow:var(--shadow-sm); padding:20px;
+}
+
+.stat-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:28px;}
+@media (max-width:1050px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:520px){.stat-grid{grid-template-columns:1fr 1fr; gap:10px;}}
+
+.stat-card{
+  background:#fff; border-radius:var(--radius-lg); border:var(--border);
+  box-shadow:var(--shadow-sm); padding:18px 20px; position:relative; overflow:hidden;
+}
+.stat-card::before{content:""; position:absolute; top:0; left:0; right:0; height:3px;}
+.stat-card.c-pink::before{background:var(--pink);}
+.stat-card.c-blue::before{background:var(--blue);}
+.stat-card.c-sage::before{background:var(--sage);}
+.stat-card.c-dark::before{background:var(--medium);}
+.stat-card .icon-badge{
+  width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;
+}
+.stat-card.c-pink .icon-badge{background:var(--light-pink); color:var(--pink);}
+.stat-card.c-blue .icon-badge{background:var(--light-blue); color:var(--blue);}
+.stat-card.c-sage .icon-badge{background:var(--light-sage); color:var(--sage);}
+.stat-card.c-dark .icon-badge{background:var(--light-pink); color:var(--medium);}
+.stat-card .icon-badge svg{width:18px; height:18px; stroke:currentColor;}
+.stat-card .label{font-size:12.5px; color:var(--gray); font-weight:500; margin-bottom:4px;}
+.stat-card .value{font-size:23px; font-weight:900; color:var(--dark); letter-spacing:0.01em;}
+
+.section-title{display:flex; align-items:center; justify-content:space-between; margin:34px 0 14px 0;}
+.section-title h2{font-size:16.5px; color:var(--dark);}
+.section-title .sub{font-size:12px; color:var(--gray); font-weight:500;}
+
+/* ---------- Filter bar ---------- */
+.filter-bar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+.input, select.input, .input-search input{
+  border:var(--border); border-radius:var(--radius-sm); background:#fff;
+  padding:10px 13px; font-size:14px; color:var(--dark); outline:none;
+}
+.input:focus, select.input:focus, .input-search input:focus{border-color:var(--soft-pink); box-shadow:0 0 0 3px var(--light-pink);}
+.input-search{position:relative; flex:1; min-width:180px;}
+.input-search svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; stroke:var(--gray);}
+.input-search input{width:100%; padding-left:34px;}
+select.input{min-width:120px;}
+
+/* ---------- Order list ---------- */
+.order-list{display:flex; flex-direction:column; gap:10px;}
+.order-row{
+  display:grid; grid-template-columns:1.3fr 1fr 1.3fr 0.8fr 0.7fr 1fr auto;
+  gap:12px; align-items:center;
+  background:#fff; border:var(--border); border-radius:var(--radius); padding:14px 16px;
+  box-shadow:var(--shadow-sm); cursor:pointer; transition:box-shadow .15s ease, border-color .15s ease;
+}
+.order-row:hover{box-shadow:var(--shadow); border-color:var(--soft-pink);}
+.order-row .cell{min-width:0;}
+.order-row .cell .k{display:none; font-size:10.5px; color:var(--gray); font-weight:700; margin-bottom:2px;}
+.order-row .client-name{font-weight:700; color:var(--dark); font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.order-row .client-sub{font-size:11.5px; color:var(--gray); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.order-row .amount{font-weight:900; color:var(--pink); font-size:15px; text-align:right;}
+.order-row .row-actions{display:flex; gap:6px;}
+.icon-btn{
+  width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+  background:var(--light-pink); color:var(--pink); border:none; flex-shrink:0;
+}
+.icon-btn.gray{background:rgba(55,53,47,0.06); color:var(--medium);}
+.icon-btn svg{width:15px; height:15px; stroke:currentColor;}
+.icon-btn:hover{opacity:0.8;}
+
+@media (max-width:760px){
+  .order-row{grid-template-columns:1fr 1fr; grid-auto-rows:auto; row-gap:10px;}
+  .order-row .cell .k{display:block;}
+  .order-row .row-actions{grid-column:1/-1; justify-content:flex-end; border-top:1px dashed rgba(55,53,47,0.1); padding-top:10px; margin-top:2px;}
+  .order-row .amount{text-align:left;}
+}
+
+/* ---------- Client list ---------- */
+.client-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:14px;}
+.client-card{background:#fff; border:var(--border); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm);}
+.client-card .name{font-weight:700; font-size:15px; color:var(--dark); margin-bottom:6px;}
+.client-card .row{font-size:12.5px; color:var(--medium); display:flex; gap:6px; margin-top:4px; line-height:1.5;}
+.client-card .row .lab{color:var(--gray); flex-shrink:0; width:44px;}
+.client-card .actions{display:flex; gap:8px; margin-top:12px;}
+
+/* ---------- Stats table ---------- */
+.stats-table{width:100%; border-collapse:collapse; background:#fff; border-radius:var(--radius); overflow:hidden; border:var(--border);}
+.stats-table th, .stats-table td{padding:12px 14px; text-align:left; font-size:13.5px;}
+.stats-table thead th{background:var(--light-pink); color:var(--medium); font-weight:700; font-size:12px;}
+.stats-table tbody tr{border-top:1px solid rgba(55,53,47,0.06);}
+.stats-table tbody tr:hover{background:var(--light-pink);}
+.stats-table td.num{text-align:right; font-variant-numeric:tabular-nums;}
+.stats-table tfoot td{font-weight:900; background:var(--light-blue); border-top:2px solid var(--soft-blue);}
+.bar-cell{width:150px;}
+.bar-track{height:8px; background:var(--light-blue); border-radius:99px; overflow:hidden;}
+.bar-fill{height:100%; background:linear-gradient(90deg, var(--pink), var(--blue)); border-radius:99px;}
+
+.table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+
+/* ---------- Empty state ---------- */
+.empty-state{
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  padding:56px 20px; color:var(--gray);
+  background:#fff; border:1px dashed rgba(55,53,47,0.16); border-radius:var(--radius-lg);
+}
+.empty-state .icon-badge{width:56px; height:56px; border-radius:16px; background:var(--light-pink); color:var(--pink); display:flex; align-items:center; justify-content:center; margin-bottom:16px;}
+.empty-state .icon-badge svg{width:26px; height:26px; stroke:currentColor;}
+.empty-state h3{font-size:15px; color:var(--dark); margin-bottom:6px;}
+.empty-state p{font-size:13px; color:var(--gray); margin-bottom:18px; max-width:280px;}
+
+/* ---------- Modal ---------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(55,53,47,0.42); z-index:80;
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.open{display:flex;}
+.modal-panel{
+  background:#fff; border-radius:var(--radius-lg); width:100%; max-width:560px;
+  max-height:88vh; overflow-y:auto; box-shadow:var(--shadow-lg);
+}
+.modal-head{display:flex; align-items:center; justify-content:space-between; padding:20px 22px; border-bottom:var(--border); position:sticky; top:0; background:#fff; z-index:2;}
+.modal-head h3{font-size:16.5px;}
+.modal-body{padding:20px 22px;}
+.modal-foot{display:flex; gap:10px; justify-content:flex-end; padding:16px 22px; border-top:var(--border); position:sticky; bottom:0; background:#fff;}
+
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+.form-grid .full{grid-column:1/-1;}
+@media (max-width:520px){.form-grid{grid-template-columns:1fr;}}
+.field label{display:block; font-size:12.5px; font-weight:700; color:var(--medium); margin-bottom:6px;}
+.field .req{color:var(--pink);}
+.field input, .field select, .field textarea{
+  width:100%; border:var(--border); border-radius:var(--radius-sm); background:var(--bg);
+  padding:10px 12px; font-size:14px; color:var(--dark); outline:none;
+}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--soft-pink); box-shadow:0 0 0 3px var(--light-pink); background:#fff;}
+.field textarea{resize:vertical; min-height:60px;}
+.field-hint{font-size:11.5px; color:var(--sage); margin-top:5px; font-weight:500;}
+.time-range-row{display:flex; align-items:center; gap:8px;}
+.time-range-row input{flex:1; min-width:0;}
+.time-sep{color:var(--gray); font-size:13px; flex-shrink:0;}
+.duration-display{background:var(--light-sage); border:1px dashed var(--sage); border-radius:var(--radius-sm); padding:10px 12px; font-weight:700; color:var(--dark); font-size:15px;}
+.checkbox-row{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--medium); margin-top:4px;}
+.checkbox-row input{width:16px; height:16px;}
+
+@media (max-width:600px){
+  .modal-overlay{padding:0; align-items:flex-end;}
+  .modal-panel{max-width:100%; max-height:94vh; border-radius:20px 20px 0 0;}
+}
+
+.divider-fade{height:3px; border-radius:99px; background:linear-gradient(90deg, var(--pink), var(--blue)); opacity:0.5; margin:6px 0 22px 0;}
+
+.toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background:var(--dark); color:#fff; padding:11px 20px; border-radius:99px;
+  font-size:13.5px; font-weight:500; box-shadow:var(--shadow-lg); z-index:120;
+  opacity:0; transition:opacity .25s ease, transform .25s ease; pointer-events:none;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+@media (max-width:899px){.toast{bottom:calc(var(--bottomnav-h) + 16px);}}
+
+.recent-list{display:flex; flex-direction:column; gap:8px;}
+.recent-item{display:flex; align-items:center; justify-content:space-between; background:#fff; border:var(--border); border-radius:var(--radius-sm); padding:12px 14px;}
+.recent-item .l{font-size:13.5px; color:var(--dark); font-weight:700;}
+.recent-item .l .sub{font-weight:500; color:var(--gray); font-size:12px; margin-top:2px;}
+.recent-item .r{font-weight:900; color:var(--pink); font-size:14px;}
+
+.backup-block{background:#fff; border:var(--border); border-radius:var(--radius-lg); padding:22px; margin-bottom:18px;}
+.backup-block h3{font-size:14.5px; margin-bottom:6px;}
+.backup-block p{font-size:12.5px; color:var(--gray); margin-bottom:14px; line-height:1.6;}
+.backup-block.danger{border-color:rgba(180,87,76,0.3); background:#FDF7F6;}
+
+/* ---------- Schedule page ---------- */
+.crew-chip-row{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px 2px; margin-bottom:20px; -webkit-overflow-scrolling:touch;}
+.chip{flex-shrink:0; padding:9px 18px; border-radius:999px; border:var(--border); background:#fff; color:var(--medium); font-size:13.5px; font-weight:700; white-space:nowrap;}
+.chip.active{background:var(--pink); color:#fff; border-color:var(--pink); box-shadow:0 3px 10px rgba(201,147,138,0.35);}
+.seg-toggle{display:inline-flex; border:var(--border); border-radius:999px; padding:3px; background:#fff;}
+.seg-btn{border:none; background:transparent; padding:7px 16px; border-radius:999px; font-size:13px; font-weight:700; color:var(--medium);}
+.seg-btn.active{background:var(--pink); color:#fff;}
+.tag-list{display:flex; flex-wrap:wrap; gap:8px;}
+.tag-chip{display:inline-flex; align-items:center; gap:6px; background:var(--light-blue); color:var(--blue); font-weight:700; font-size:13px; padding:7px 8px 7px 14px; border-radius:999px;}
+.tag-chip button{display:flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; border:none; background:rgba(255,255,255,0.6); color:var(--blue); flex-shrink:0;}
+.tag-chip button svg{width:10px; height:10px; stroke:currentColor;}
+.date-group-header{font-size:13px; font-weight:700; color:var(--pink); margin:22px 0 10px 0; padding-left:2px;}
+.date-group-header:first-of-type{margin-top:2px;}
+.job-card{background:#fff; border:var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:12px; box-shadow:var(--shadow-sm);}
+.job-time-badge{display:inline-block; background:var(--light-blue); color:var(--blue); font-weight:700; font-size:12px; padding:4px 11px; border-radius:999px; margin-bottom:10px;}
+.source-badge{display:inline-block; font-weight:700; font-size:12px; padding:4px 11px; border-radius:999px; margin-bottom:10px;}
+.source-badge.own{background:var(--light-sage); color:var(--sage);}
+.source-badge.external{background:var(--light-pink); color:var(--pink);}
+.badge-toggle{display:block; margin-top:6px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; border:none; cursor:pointer; white-space:nowrap;}
+.badge-toggle.unsettled{background:var(--light-pink); color:#B4574C;}
+.badge-toggle.settled{background:var(--light-sage); color:var(--sage);}
+.badge-toggle-select{display:block; margin-top:6px; padding:3px 22px 3px 10px; border-radius:999px; font-size:11px; font-weight:700; border:none; cursor:pointer; white-space:nowrap; -webkit-appearance:none; appearance:none; background-repeat:no-repeat; background-position:right 7px center; background-size:9px; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A5248' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");}
+.badge-toggle-select.status-unbilled{background-color:rgba(155,154,151,0.16); color:var(--medium);}
+.badge-toggle-select.status-billed{background-color:var(--light-pink); color:#B4574C;}
+.badge-toggle-select.status-paid{background-color:var(--light-sage); color:var(--sage);}
+.job-client{font-size:16px; font-weight:900; color:var(--dark); margin-bottom:8px;}
+.job-row{display:flex; gap:8px; font-size:13.5px; color:var(--medium); margin-top:6px; line-height:1.5;}
+.job-row .lab{color:var(--gray); flex-shrink:0; width:48px;}
+.job-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+
+/* ---------- In-page invoice view (avoids window.open, which is blocked in many mobile/in-app browsers) ---------- */
+.invoice-view{display:none; position:fixed; inset:0; background:#fff; z-index:300; overflow-y:auto;}
+.invoice-view.open{display:block;}
+.invoice-toolbar{position:sticky; top:0; background:var(--cream); border-bottom:var(--border); padding:14px 20px; display:flex; justify-content:flex-end; gap:10px; z-index:2;}
+.invoice-doc{max-width:800px; margin:0 auto; padding:32px 24px 60px 24px; color:#37352F;}
+.invoice-doc h1{font-size:22px; text-align:center; letter-spacing:4px; margin-bottom:24px;}
+.invoice-head-row{display:flex; justify-content:space-between; margin-bottom:20px; font-size:13px; line-height:1.8; flex-wrap:wrap; gap:16px;}
+.invoice-head-row .box{min-width:240px; flex:1;}
+.invoice-head-row .lab{color:#9B9A97; margin-right:6px;}
+.invoice-doc table{width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;}
+.invoice-doc th, .invoice-doc td{border:1px solid #ddd; padding:8px 10px; text-align:left;}
+.invoice-doc th{background:#F5E6E3; font-weight:700;}
+.invoice-doc td.num, .invoice-doc th.num{text-align:right;}
+.invoice-totals{margin-top:16px; width:320px; margin-left:auto; font-size:13.5px;}
+.invoice-totals div{display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee;}
+.invoice-totals .grand{font-weight:900; font-size:16px; border-bottom:none; border-top:2px solid #37352F; padding-top:10px; margin-top:6px;}
+
+/* ---------- In-page envelope print view ---------- */
+.envelope-view{display:none; position:fixed; inset:0; background:#e8e8e6; z-index:300; overflow-y:auto;}
+.envelope-view.open{display:block;}
+.envelope-toolbar{position:sticky; top:0; background:var(--cream); border-bottom:var(--border); padding:14px 20px; display:flex; justify-content:flex-end; gap:10px; z-index:2;}
+.envelope-canvas{position:relative; background:#fff; margin:30px auto; box-shadow:0 2px 14px rgba(0,0,0,0.18); box-sizing:border-box;}
+.envelope-recipient, .envelope-sender{position:absolute; line-height:1.6; color:#1a1a1a;}
+.envelope-recipient .name{font-weight:700;}
+@media print{
+  body > *:not(#invoiceView):not(#envelopeView){display:none !important;}
+  .invoice-view, .envelope-view{position:static; z-index:auto; background:#fff;}
+  .invoice-toolbar, .envelope-toolbar{display:none !important;}
+  .invoice-doc{padding:0; max-width:none;}
+  .envelope-canvas{box-shadow:none; margin:0;}
+}
+</style>
+</head>
+
+<body>
+
+<div id="topbar" class="topbar">
+  <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h6M6 20V8l9-4v4M6 10h11a3 3 0 013 3v2h-4"/><path d="M16 15v5"/></svg></div>
+  <div class="brand-text"><div class="t1">吊車請款管理</div><div class="t2">Crane Invoice Tool</div></div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h6M6 20V8l9-4v4M6 10h11a3 3 0 013 3v2h-4"/><path d="M16 15v5"/></svg></div>
+      <div class="brand-text"><div class="t1">吊車請款管理</div><div class="t2">Crane Invoice Tool</div></div>
+    </div>
+    <ul class="nav-list" id="navList"></ul>
+    <div class="sidebar-footer">資料僅儲存在此瀏覽器中<br>請定期於「備份還原」匯出</div>
+  </aside>
+
+  <main class="main-content" id="mainContent"></main>
+</div>
+
+<nav class="bottomnav" id="bottomnav"><div class="bottomnav-inner" id="bottomnavInner"></div></nav>
+
+<div id="modalRoot"></div>
+<div id="invoiceView" class="invoice-view"></div>
+<div id="envelopeView" class="envelope-view"></div>
+<div id="toast" class="toast"></div>
+<input type="file" id="importFileInput" accept="application/json" style="display:none">
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   ICONS
+============================================================ */
+function icon(paths, extra){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+paths+'</svg>';
+}
+const ICONS = {
+  dashboard: icon('<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'),
+  list: icon('<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.4"/><circle cx="3.5" cy="12" r="1.4"/><circle cx="3.5" cy="18" r="1.4"/>'),
+  clients: icon('<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="8.5" r="2.6"/><path d="M15.5 14.2c2.9 0.3 5 2.4 5 5.8"/>'),
+  stats: icon('<path d="M4 20V10M11 20V4M18 20v-7"/><path d="M3 20h18"/>'),
+  backup: icon('<path d="M7 18a5 5 0 01-1-9.9A6 6 0 0117.6 7 4.5 4.5 0 0117 16"/><path d="M12 12v7M9.5 16.5L12 19l2.5-2.5"/>'),
+  plus: icon('<path d="M12 5v14M5 12h14"/>'),
+  edit: icon('<path d="M4 20l1-4L16 5l3 3L8 19l-4 1z"/><path d="M14 7l3 3"/>'),
+  trash: icon('<path d="M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13"/><path d="M10 11v6M14 11v6"/>'),
+  close: icon('<path d="M6 6l12 12M18 6L6 18"/>'),
+  search: icon('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'),
+  money: icon('<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="3"/><path d="M6 9v.01M18 15v.01"/>'),
+  clock: icon('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'),
+  building: icon('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 8h1M14 8h1M9 12h1M14 12h1M9 16h1M14 16h1"/>'),
+  orders: icon('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'),
+  download: icon('<path d="M12 3v13M7 11l5 5 5-5"/><path d="M4 21h16"/>'),
+  upload: icon('<path d="M12 21V8M7 12l5-5 5 5"/><path d="M4 21h16"/>'),
+  chevron: icon('<path d="M9 6l6 6-6 6"/>'),
+  warn: icon('<path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17v.01"/>'),
+  crane: icon('<path d="M3 20h6M6 20V8l9-4v4M6 10h11a3 3 0 013 3v2h-4"/><path d="M16 15v5"/>'),
+  pricing: icon('<path d="M20.5 12.5L12 21l-9-9L4 3h8.5z"/><circle cx="8" cy="7.5" r="1.6"/>'),
+  expense: icon('<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>'),
+  pin: icon('<path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>'),
+  schedule: icon('<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><circle cx="9" cy="15" r="1.6"/>'),
+  copy: icon('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/>'),
+  exchange: icon('<path d="M4 8h13l-3-3M20 16H7l3 3"/>'),
+  check: icon('<path d="M4 12.5l5 5L20 6"/>'),
+  print: icon('<path d="M6 9V3h12v6M6 18h12v4H6zM4 9h16a2 2 0 012 2v6h-4M4 9a2 2 0 00-2 2v6h4"/>'),
+  envelope: icon('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>')
+};
+
+/* ============================================================
+   STORAGE
+============================================================ */
+const LS_ORDERS = 'crane_invoice_orders_v1';
+const LS_CLIENTS = 'crane_invoice_clients_v1';
+const LS_EXPENSES = 'crane_invoice_expenses_v1';
+const LS_COMPANY = 'crane_invoice_company_v1';
+const LS_CREW = 'crane_invoice_crew_v1';
+const LS_VEHICLE_LIST = 'crane_invoice_vehicle_list_v1';
+const LS_PRICING = 'crane_invoice_pricing_v1';
+const LS_SPECIAL_PRICING = 'crane_invoice_special_pricing_v1';
+const LS_VENDOR_RATES = 'crane_invoice_vendor_rates_v1';
+const LS_INVOICE_NUMBERS = 'crane_invoice_invoice_numbers_v1';
+const LS_ENVELOPE_SETTINGS = 'crane_invoice_envelope_settings_v1';
+
+function loadOrders(){ try{ return JSON.parse(localStorage.getItem(LS_ORDERS)) || []; }catch(e){ return []; } }
+function loadClients(){ try{ return JSON.parse(localStorage.getItem(LS_CLIENTS)) || []; }catch(e){ return []; } }
+function loadExpenses(){ try{ return JSON.parse(localStorage.getItem(LS_EXPENSES)) || []; }catch(e){ return []; } }
+function loadCompanyInfo(){ try{ return JSON.parse(localStorage.getItem(LS_COMPANY)) || {}; }catch(e){ return {}; } }
+function loadCrewList(){
+  const raw = localStorage.getItem(LS_CREW);
+  if(raw===null){
+    const orders = loadOrders();
+    const seed = Array.from(new Set(orders.flatMap(o=>[o.driver,o.assistant]).filter(Boolean).map(s=>s.trim()))).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+    localStorage.setItem(LS_CREW, JSON.stringify(seed));
+    return seed;
+  }
+  try{ return JSON.parse(raw) || []; }catch(e){ return []; }
+}
+function loadVehicleList(){
+  const raw = localStorage.getItem(LS_VEHICLE_LIST);
+  if(raw===null){
+    const orders = loadOrders();
+    const seed = Array.from(new Set(orders.map(o=>o.vehicleNo).filter(Boolean).map(s=>s.trim()))).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+    localStorage.setItem(LS_VEHICLE_LIST, JSON.stringify(seed));
+    return seed;
+  }
+  try{ return JSON.parse(raw) || []; }catch(e){ return []; }
+}
+function loadPricing(){
+  const raw = localStorage.getItem(LS_PRICING);
+  if(raw===null){
+    const defaults = [
+      { id:uid(), tonnage:25, firstHour:4000, perHour:2000, dailyCap:13000, overtimeStart:'17:00', overtimeEnd:'', overtimeRate:2500 }
+    ];
+    localStorage.setItem(LS_PRICING, JSON.stringify(defaults));
+    return defaults;
+  }
+  try{ return JSON.parse(raw) || []; }catch(e){ return []; }
+}
+function loadSpecialPricing(){ try{ return JSON.parse(localStorage.getItem(LS_SPECIAL_PRICING)) || []; }catch(e){ return []; } }
+function loadVendorRates(){ try{ return JSON.parse(localStorage.getItem(LS_VENDOR_RATES)) || []; }catch(e){ return []; } }
+function loadInvoiceNumbers(){ try{ return JSON.parse(localStorage.getItem(LS_INVOICE_NUMBERS)) || {}; }catch(e){ return {}; } }
+function loadEnvelopeSettings(){
+  try{
+    const v = JSON.parse(localStorage.getItem(LS_ENVELOPE_SETTINGS));
+    return v || { orientation:'horizontal', length:22.9, width:10.5 };
+  }catch(e){ return { orientation:'horizontal', length:22.9, width:10.5 }; }
+}
+function saveOrders(){ localStorage.setItem(LS_ORDERS, JSON.stringify(state.orders)); }
+function saveClients(){ localStorage.setItem(LS_CLIENTS, JSON.stringify(state.clients)); }
+function saveExpenses(){ localStorage.setItem(LS_EXPENSES, JSON.stringify(state.expenses)); }
+function saveCompanyInfo(){ localStorage.setItem(LS_COMPANY, JSON.stringify(state.companyInfo)); }
+function saveCrewList(){ localStorage.setItem(LS_CREW, JSON.stringify(state.crewList)); }
+function saveVehicleList(){ localStorage.setItem(LS_VEHICLE_LIST, JSON.stringify(state.vehicleList)); }
+function savePricing(){ localStorage.setItem(LS_PRICING, JSON.stringify(state.pricingRules)); }
+function saveSpecialPricing(){ localStorage.setItem(LS_SPECIAL_PRICING, JSON.stringify(state.specialPricing)); }
+function saveVendorRates(){ localStorage.setItem(LS_VENDOR_RATES, JSON.stringify(state.vendorRates)); }
+function saveInvoiceNumbers(){ localStorage.setItem(LS_INVOICE_NUMBERS, JSON.stringify(state.invoiceNumbers)); }
+function invoiceKey(clientName, month){ return (clientName||'').trim()+'__'+(month||''); }
+function getInvoiceNumber(clientName, month){ return state.invoiceNumbers[invoiceKey(clientName, month)] || ''; }
+function setInvoiceNumber(clientName, month, invoiceNo){
+  const key = invoiceKey(clientName, month);
+  if(invoiceNo){ state.invoiceNumbers[key] = invoiceNo; }
+  else { delete state.invoiceNumbers[key]; }
+  saveInvoiceNumbers();
+}
+function saveEnvelopeSettings(){ localStorage.setItem(LS_ENVELOPE_SETTINGS, JSON.stringify(state.envelopeSettings)); }
+
+const state = {
+  orders: loadOrders(),
+  clients: loadClients(),
+  expenses: loadExpenses(),
+  companyInfo: loadCompanyInfo(),
+  crewList: loadCrewList(),
+  vehicleList: loadVehicleList(),
+  pricingRules: loadPricing(),
+  specialPricing: loadSpecialPricing(),
+  vendorRates: loadVendorRates(),
+  invoiceNumbers: loadInvoiceNumbers(),
+  envelopeSettings: loadEnvelopeSettings(),
+  page: 'stats',
+  filters: { search:'', month:'all' },
+  clientFilters: { search:'', type:'all' },
+  expenseFilters: { search:'', month: currentMonthStr() },
+  scheduleFilters: { name:'' },
+  receivablesFilters: { showSettled:false },
+  statsMonth: currentMonthStr(),
+  statsGroupBy: 'client',
+  trashFilters: { type:'orders' },
+  statementFilters: { clientName:'', month: currentMonthStr() }
+};
+
+function activeOrders(){ return state.orders.filter(o=>!o.deletedAt); }
+function activeClients(){ return state.clients.filter(c=>!c.deletedAt); }
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function currentMonthStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+/* ============================================================
+   FORMATTERS
+============================================================ */
+const currencyFmt = new Intl.NumberFormat('zh-TW', { style:'currency', currency:'TWD', maximumFractionDigits:0 });
+function fmtMoney(n){ n = Number(n)||0; return currencyFmt.format(n); }
+function fmtNum(n, d){ n = Number(n)||0; return n.toLocaleString('zh-TW', { maximumFractionDigits: d==null?1:d }); }
+function fmtDate(s){ if(!s) return ''; const p = s.split('-'); return p.length===3 ? p[0]+'/'+p[1]+'/'+p[2] : s; }
+function monthLabel(m){ if(!m) return ''; const p = m.split('-'); return p[0]+'年'+parseInt(p[1],10)+'月'; }
+function fmtTimeRange(o){
+  const parts = [];
+  if(o.amStart || o.amEnd) parts.push('上午 '+(o.amStart||'?')+'-'+(o.amEnd||'?'));
+  if(o.pmStart || o.pmEnd) parts.push('下午 '+(o.pmStart||'?')+'-'+(o.pmEnd||'?'));
+  return parts.length ? parts.join('、') : '—';
+}
+function fmtVehicleSource(o){
+  if(o.vehicleSource === 'external') return '外調'+(o.externalVendor?'：'+o.externalVendor:'');
+  return '自家車';
+}
+function fmtCrewInfo(o){
+  const parts = [];
+  parts.push(fmtVehicleSource(o));
+  if(o.vehicleNo) parts.push('車號 '+o.vehicleNo);
+  if(o.driver) parts.push('司機 '+o.driver);
+  if(o.assistant) parts.push('助手 '+o.assistant);
+  return parts.join('・');
+}
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function paymentStatusOf(o){ return (o && o.paymentStatus) || 'unbilled'; }
+function paymentStatusLabel(status){
+  if(status==='unbilled') return '未請款';
+  if(status==='billed') return '已請款未收';
+  if(status==='paid') return '已收款';
+  return status;
+}
+function paymentStatusClass(status){
+  if(status==='paid') return 'status-paid';
+  if(status==='billed') return 'status-billed';
+  return 'status-unbilled';
+}
+function taxTypeLabel(taxType){
+  if(taxType==='added') return '稅外加';
+  if(taxType==='exempt') return '免稅';
+  return '稅內含';
+}
+
+/* ============================================================
+   NAV
+============================================================ */
+const NAV_ITEMS = [
+  { key:'stats', label:'月結統計', icon:ICONS.stats },
+  { key:'orders', label:'訂單清單', icon:ICONS.list },
+  { key:'clients', label:'客戶管理', icon:ICONS.clients },
+  { key:'pricing', label:'單價設定', icon:ICONS.pricing },
+  { key:'expenses', label:'支出紀錄', icon:ICONS.expense },
+  { key:'receivables', label:'應收應付', icon:ICONS.exchange },
+  { key:'backup', label:'設定', icon:ICONS.backup }
+];
+
+function renderNav(){
+  const navList = document.getElementById('navList');
+  navList.innerHTML = NAV_ITEMS.map(item => (
+    '<li class="nav-item'+(state.page===item.key?' active':'')+'" data-nav="'+item.key+'">'+item.icon+'<span>'+item.label+'</span></li>'
+  )).join('');
+  const bn = document.getElementById('bottomnavInner');
+  bn.innerHTML = NAV_ITEMS.map(item => (
+    '<div class="bn-item'+(state.page===item.key?' active':'')+'" data-nav="'+item.key+'">'+item.icon+'<span>'+item.label+'</span></div>'
+  )).join('');
+}
+
+function navigate(page){
+  state.page = page;
+  renderNav();
+  render();
+  window.scrollTo({top:0, behavior:'instant' in window ? 'instant' : 'auto'});
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+let toastTimer = null;
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   CONFIRM MODAL (replaces native confirm() — some in-app
+   browsers, e.g. LINE/FB in-app browser, block window.confirm)
+============================================================ */
+let pendingConfirmCallback = null;
+function showConfirmModal(message, onConfirm, opts){
+  opts = opts || {};
+  const okClass = opts.danger ? 'btn-danger' : 'btn-primary';
+  const okLabel = opts.okLabel || '確定';
+  const html = ''
+    + '<div class="modal-overlay open" id="confirmModalOverlay">'
+    + '<div class="modal-panel" style="max-width:380px">'
+    + '<div class="modal-body" style="padding-top:24px;"><p style="font-size:14.5px; color:var(--dark); line-height:1.7; white-space:pre-line; margin:0;">'+escapeHtml(message)+'</p></div>'
+    + '<div class="modal-foot"><button class="btn btn-secondary" data-action="cancel-confirm-modal">取消</button>'
+    + '<button class="btn '+okClass+'" data-action="confirm-modal-ok">'+escapeHtml(okLabel)+'</button></div>'
+    + '</div></div>';
+  document.getElementById('modalRoot').innerHTML = html;
+  pendingConfirmCallback = onConfirm;
+}
+
+/* ============================================================
+   DERIVED DATA HELPERS
+============================================================ */
+function findClientByName(name){
+  if(!name) return null;
+  const n = name.trim();
+  return activeClients().find(c => c.name.trim() === n) || null;
+}
+function isPeerClient(name){
+  const c = findClientByName(name);
+  return !!(c && c.type === 'peer');
+}
+
+function ordersInMonth(m){
+  if(m === 'all') return activeOrders();
+  return activeOrders().filter(o => (o.date||'').slice(0,7) === m);
+}
+
+function expensesInMonth(m){
+  if(m === 'all') return state.expenses.slice();
+  return state.expenses.filter(x => (x.date||'').slice(0,7) === m);
+}
+
+function distinctMonths(){
+  const set = new Set(activeOrders().map(o => (o.date||'').slice(0,7)).filter(Boolean));
+  state.expenses.forEach(x => { if(x.date) set.add(x.date.slice(0,7)); });
+  return Array.from(set).sort().reverse();
+}
+
+function suggestAmount(clientName, tonnage, excludeId){
+  const name = (clientName||'').trim();
+  if(!name) return null;
+  const candidates = activeOrders().filter(o => o.id !== excludeId && (o.clientName||'').trim() === name)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  if(!candidates.length) return null;
+  if(tonnage !== '' && tonnage != null){
+    const exact = candidates.filter(o => String(o.tonnage) === String(tonnage));
+    if(exact.length) return { amount: exact[0].amount, exact:true };
+  }
+  return { amount: candidates[0].amount, exact:false };
+}
+
+function upsertClientFromOrder(name, taxId, address){
+  name = (name||'').trim();
+  if(!name) return;
+  let c = findClientByName(name);
+  if(c){
+    if(taxId && !c.taxId) c.taxId = taxId;
+    if(address && !c.address) c.address = address;
+  } else {
+    state.clients.push({ id: uid(), name, taxId: taxId||'', address: address||'', phone:'', type:'client', note:'', createdAt: Date.now() });
+  }
+  saveClients();
+}
+
+/* ============================================================
+   RENDER: ROOT
+============================================================ */
+function render(){
+  const main = document.getElementById('mainContent');
+  if(state.page === 'dashboard') main.innerHTML = renderDashboard();
+  else if(state.page === 'orders') main.innerHTML = renderOrdersPage();
+  else if(state.page === 'schedule') main.innerHTML = renderSchedulePage();
+  else if(state.page === 'clients') main.innerHTML = renderClientsPage();
+  else if(state.page === 'pricing') main.innerHTML = renderPricingPage();
+  else if(state.page === 'expenses') main.innerHTML = renderExpensesPage();
+  else if(state.page === 'stats') main.innerHTML = renderStatsPage();
+  else if(state.page === 'receivables') main.innerHTML = renderReceivablesPage();
+  else if(state.page === 'backup') main.innerHTML = renderBackupPage();
+}
+
+function rerenderPreservingFocus(){
+  const active = document.activeElement;
+  const id = active && active.id;
+  const selStart = (active && typeof active.selectionStart === 'number') ? active.selectionStart : null;
+  const selEnd = (active && typeof active.selectionEnd === 'number') ? active.selectionEnd : null;
+  render();
+  if(id){
+    const el = document.getElementById(id);
+    if(el){
+      el.focus();
+      if(selStart!=null){ try{ el.setSelectionRange(selStart, selEnd); }catch(e){} }
+    }
+  }
+}
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+function renderDashboard(){
+  const m = currentMonthStr();
+  const monthOrders = ordersInMonth(m);
+  const totalAmount = monthOrders.reduce((s,o)=>s+Number(o.amount||0),0);
+  const totalHours = monthOrders.reduce((s,o)=>s+Number(o.duration||0),0);
+  const clientSet = new Set(monthOrders.map(o=>o.clientName.trim()));
+
+  const byClient = {};
+  monthOrders.forEach(o=>{
+    const k = o.clientName.trim();
+    if(!byClient[k]) byClient[k] = { name:k, count:0, amount:0 };
+    byClient[k].count++;
+    byClient[k].amount += Number(o.amount||0);
+  });
+  const clientRows = Object.values(byClient).sort((a,b)=>b.amount-a.amount);
+  const maxAmount = clientRows.length ? clientRows[0].amount : 0;
+
+  const recent = state.orders.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0)).slice(0,5);
+
+  let html = '';
+  html += '<div class="page-head"><div><h1>儀表板</h1><div class="sub">'+monthLabel(m)+'・本月營運總覽</div></div>';
+  html += '<button class="btn btn-primary" data-action="open-order-modal">'+ICONS.plus+'新增訂單</button></div>';
+
+  html += '<div class="stat-grid">';
+  html += statCard('c-pink', ICONS.money, '本月營收', fmtMoney(totalAmount));
+  html += statCard('c-blue', ICONS.orders, '本月訂單數', fmtNum(monthOrders.length,0)+' 筆');
+  html += statCard('c-sage', ICONS.clock, '本月總工時', fmtNum(totalHours)+' 小時');
+  html += statCard('c-dark', ICONS.building, '服務客戶數', fmtNum(clientSet.size,0)+' 家');
+  html += '</div>';
+
+  html += '<div class="section-title"><h2>本月各客戶營業額</h2><span class="sub">依金額排序</span></div>';
+  if(!clientRows.length){
+    html += emptyState(ICONS.building, '本月還沒有訂單資料', '新增第一筆訂單後，這裡會自動列出各客戶的營業額佔比。', true);
+  } else {
+    html += '<div class="table-scroll"><table class="stats-table"><thead><tr><th>客戶名稱</th><th>筆數</th><th>營業額</th><th class="bar-cell">佔比</th></tr></thead><tbody>';
+    clientRows.forEach(r=>{
+      const pct = maxAmount ? Math.round((r.amount/maxAmount)*100) : 0;
+      html += '<tr><td>'+escapeHtml(r.name)+'</td><td class="num">'+r.count+'</td><td class="num">'+fmtMoney(r.amount)+'</td>'
+        + '<td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  html += '<div class="section-title"><h2>最近新增</h2><span class="sub" data-nav="orders" style="cursor:pointer">查看全部 '+ICONS.chevron+'</span></div>';
+  if(!recent.length){
+    html += emptyState(ICONS.orders, '尚未建立任何訂單', '按下右上角「新增訂單」，開始記錄第一筆吊車工作紀錄。', false);
+  } else {
+    html += '<div class="recent-list">';
+    recent.forEach(o=>{
+      html += '<div class="recent-item" data-action="open-order-modal" data-id="'+o.id+'">'
+        + '<div class="l">'+escapeHtml(o.clientName)+'<div class="sub">'+fmtDate(o.date)+'・'+escapeHtml(o.location||'—')+'</div></div>'
+        + '<div class="r">'+fmtMoney(o.amount)+'</div></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function statCard(cls, iconSvg, label, value){
+  return '<div class="stat-card '+cls+'"><div class="icon-badge">'+iconSvg+'</div><div class="label">'+label+'</div><div class="value">'+value+'</div></div>';
+}
+
+function emptyState(iconSvg, title, desc, showCta){
+  return '<div class="empty-state"><div class="icon-badge">'+iconSvg+'</div><h3>'+title+'</h3><p>'+desc+'</p>'
+    + (showCta ? '<button class="btn btn-primary" data-action="open-order-modal">'+ICONS.plus+'新增訂單資料</button>' : '') + '</div>';
+}
+
+/* ============================================================
+   ORDERS PAGE
+============================================================ */
+function renderOrdersPage(){
+  const months = distinctMonths();
+  let list = ordersInMonth(state.filters.month);
+  const q = state.filters.search.trim();
+  if(q){
+    list = list.filter(o => (o.clientName+o.location+(o.workContent||'')+(o.vehicleNo||'')+(o.driver||'')+(o.assistant||'')+(o.docketNo||'')).toLowerCase().includes(q.toLowerCase()));
+  }
+  list = list.sort((a,b)=>(b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
+
+  let html = '';
+  html += '<div class="page-head"><div><h1>訂單清單</h1><div class="sub">共 '+activeOrders().length+' 筆訂單資料</div></div>';
+  html += '<button class="btn btn-primary" data-action="open-order-modal">'+ICONS.plus+'新增訂單</button></div>';
+
+  html += '<div class="filter-bar">';
+  html += '<div class="input-search">'+ICONS.search+'<input type="text" id="orderSearchInput" placeholder="搜尋客戶、地點、工作內容、車牌、簽單編號或人員" value="'+escapeHtml(state.filters.search)+'"></div>';
+  html += '<select class="input" id="orderMonthSelect"><option value="all"'+(state.filters.month==='all'?' selected':'')+'>全部月份</option>';
+  months.forEach(m=>{ html += '<option value="'+m+'"'+(state.filters.month===m?' selected':'')+'>'+monthLabel(m)+'</option>'; });
+  html += '</select>';
+  html += '</div>';
+
+  if(!list.length){
+    html += emptyState(ICONS.orders, activeOrders().length ? '找不到符合條件的訂單' : '尚未建立任何訂單',
+      activeOrders().length ? '試著換個關鍵字，或選擇「全部月份」再查看一次。' : '按下「新增訂單」開始記錄第一筆吊車工作紀錄。', !activeOrders().length);
+  } else {
+    html += '<div class="order-list">';
+    list.forEach(o=>{
+      html += '<div class="order-row" data-action="open-order-modal" data-id="'+o.id+'">'
+        + '<div class="cell"><div class="k">客戶</div><div class="client-name">'+escapeHtml(o.clientName)+'</div><div class="client-sub">'+escapeHtml(o.docketNo?('簽單 '+o.docketNo):(o.clientTaxId||'—'))+'</div></div>'
+        + '<div class="cell"><div class="k">日期時間</div>'+fmtDate(o.date)+'<div class="client-sub">'+escapeHtml(fmtTimeRange(o))+'</div></div>'
+        + '<div class="cell"><div class="k">地點</div>'+escapeHtml(o.location||'—')+'<div class="client-sub">'+escapeHtml([o.workContent, fmtCrewInfo(o)].filter(Boolean).join('・'))+'</div></div>'
+        + '<div class="cell"><div class="k">時長</div>'+ (o.duration!==''&&o.duration!=null ? fmtNum(o.duration)+' 小時' : '—') +'<div class="client-sub">'+taxTypeLabel(o.taxType)+'</div></div>'
+        + '<div class="cell"><div class="k">金額</div><div class="amount">'+fmtMoney(o.amount)+'</div>'
+          + '<select class="badge-toggle-select '+paymentStatusClass(o.paymentStatus)+'" data-action="set-payment-status" data-id="'+o.id+'">'
+            + '<option value="unbilled"'+(paymentStatusOf(o)==='unbilled'?' selected':'')+'>未請款</option>'
+            + '<option value="billed"'+(paymentStatusOf(o)==='billed'?' selected':'')+'>已請款未收</option>'
+            + '<option value="paid"'+(paymentStatusOf(o)==='paid'?' selected':'')+'>已收款</option>'
+          + '</select>'
+          + (o.vehicleSource==='external' && o.vendorCost ? '<button class="badge-toggle '+(o.vendorSettled?'settled':'unsettled')+'" data-action="toggle-vendor-settled" data-id="'+o.id+'">'+(o.vendorSettled?'已付同行':'未付同行')+'</button>' : '')
+        + '</div>'
+        + '<div class="row-actions">'
+          + '<button class="icon-btn" data-action="open-order-modal" data-id="'+o.id+'" title="編輯">'+ICONS.edit+'</button>'
+          + '<button class="icon-btn gray" data-action="delete-order" data-id="'+o.id+'" title="刪除">'+ICONS.trash+'</button>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+/* ============================================================
+   CLIENTS PAGE
+============================================================ */
+function renderClientsPage(){
+  const typeFilter = state.clientFilters.type || 'all';
+  let list = activeClients();
+  if(typeFilter !== 'all') list = list.filter(c => (c.type||'client') === typeFilter);
+  const q = state.clientFilters.search.trim().toLowerCase();
+  if(q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.taxId||'').includes(q));
+  list.sort((a,b)=> a.name.localeCompare(b.name, 'zh-Hant'));
+
+  const clientCount = activeClients().filter(c=>(c.type||'client')==='client').length;
+  const peerCount = activeClients().filter(c=>c.type==='peer').length;
+
+  let html = '';
+  html += '<div class="page-head"><div><h1>客戶管理</h1><div class="sub">共 '+clientCount+' 家客戶、'+peerCount+' 家同行</div></div>';
+  html += '<button class="btn btn-primary" data-action="open-client-modal">'+ICONS.plus+'新增客戶</button></div>';
+
+  html += '<div class="crew-chip-row" style="margin-bottom:14px;">';
+  html += '<button class="chip'+(typeFilter==='all'?' active':'')+'" data-action="filter-client-type" data-type="all">全部</button>';
+  html += '<button class="chip'+(typeFilter==='client'?' active':'')+'" data-action="filter-client-type" data-type="client">客戶</button>';
+  html += '<button class="chip'+(typeFilter==='peer'?' active':'')+'" data-action="filter-client-type" data-type="peer">同行</button>';
+  html += '</div>';
+
+  html += '<div class="filter-bar"><div class="input-search">'+ICONS.search+'<input type="text" id="clientSearchInput" placeholder="搜尋客戶名稱或統編" value="'+escapeHtml(state.clientFilters.search)+'"></div></div>';
+
+  if(!list.length){
+    html += emptyState(ICONS.clients, activeClients().length ? '找不到符合條件的客戶' : '尚未建立任何客戶資料',
+      activeClients().length ? '試著換個關鍵字或切換分類再查看一次。' : '新增訂單時會自動建立客戶資料，也可以在這裡先手動建立。', false);
+  } else {
+    html += '<div class="client-grid">';
+    list.forEach(c=>{
+      const orderCount = state.orders.filter(o=>o.clientName.trim()===c.name.trim()).length;
+      const isPeer = c.type==='peer';
+      html += '<div class="client-card">'
+        + '<div class="name">'+escapeHtml(c.name)+' <span class="source-badge '+(isPeer?'external':'own')+'" style="margin-bottom:0; vertical-align:middle;">'+(isPeer?'同行':'客戶')+'</span></div>'
+        + '<div class="row"><span class="lab">統編</span>'+escapeHtml(c.taxId||'—')+'</div>'
+        + '<div class="row"><span class="lab">地址</span>'+escapeHtml(c.address||'—')+'</div>'
+        + '<div class="row"><span class="lab">電話</span>'+escapeHtml(c.phone||'—')+'</div>'
+        + '<div class="row"><span class="lab">紀錄</span>累計 '+orderCount+' 筆訂單</div>'
+        + '<div class="actions">'
+          + '<button class="btn btn-secondary btn-sm" data-action="open-client-modal" data-id="'+c.id+'">'+ICONS.edit+'編輯</button>'
+          + '<button class="btn btn-secondary btn-sm" data-action="print-envelope" data-name="'+escapeHtml(c.name)+'">'+ICONS.envelope+'列印信封</button>'
+          + '<button class="btn btn-danger btn-sm" data-action="delete-client" data-id="'+c.id+'">'+ICONS.trash+'刪除</button>'
+        + '</div></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+/* ============================================================
+   PRICING PAGE
+============================================================ */
+function renderPricingPage(){
+  const list = state.pricingRules.slice().sort((a,b)=>Number(a.tonnage)-Number(b.tonnage));
+  const specialList = state.specialPricing.slice().sort((a,b)=> (a.clientName||'').localeCompare(b.clientName||'','zh-Hant') || Number(a.tonnage)-Number(b.tonnage));
+  const vendorList = state.vendorRates.slice().sort((a,b)=> (a.vendorName||'').localeCompare(b.vendorName||'','zh-Hant'));
+
+  let html = '';
+  html += '<div class="page-head"><div><h1>單價設定</h1><div class="sub">依噸數設定計價規則，新增訂單時會自動試算金額（仍可手動調整）</div></div>';
+  html += '<button class="btn btn-primary" data-action="open-pricing-modal">'+ICONS.plus+'新增單價設定</button></div>';
+
+  if(!list.length){
+    html += emptyState(ICONS.pricing, '尚未設定任何單價', '新增噸數對應的計價規則後，填寫訂單時金額就會自動幫你試算。', false);
+  } else {
+    html += '<div class="client-grid">';
+    list.forEach(r=>{
+      const otLabel = r.overtimeStart ? (r.overtimeStart+' 至 '+(r.overtimeEnd||'之後')) : '未設定（不算加班）';
+      html += '<div class="client-card">'
+        + '<div class="name">'+fmtNum(r.tonnage,1)+' 噸</div>'
+        + '<div class="row"><span class="lab">第1小時</span>NT$'+fmtNum(r.firstHour,0)+'</div>'
+        + '<div class="row"><span class="lab">每加1hr</span>+NT$'+fmtNum(r.perHour,0)+'</div>'
+        + '<div class="row"><span class="lab">每日上限</span>NT$'+fmtNum(r.dailyCap,0)+'</div>'
+        + '<div class="row"><span class="lab">加班時間</span>'+escapeHtml(otLabel)+'</div>'
+        + '<div class="row"><span class="lab">加班每hr</span>+NT$'+fmtNum(r.overtimeRate,0)+'</div>'
+        + '<div class="actions">'
+          + '<button class="btn btn-secondary btn-sm" data-action="open-pricing-modal" data-id="'+r.id+'">'+ICONS.edit+'編輯</button>'
+          + '<button class="btn btn-danger btn-sm" data-action="delete-pricing" data-id="'+r.id+'">'+ICONS.trash+'刪除</button>'
+        + '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div class="section-title" style="margin-top:36px;"><h2>特殊客戶報價</h2><span class="sub">同噸數但特定客戶有專屬價格時，優先套用這裡的設定</span></div>';
+  html += '<div style="margin-bottom:16px;"><button class="btn btn-secondary" data-action="open-special-pricing-modal">'+ICONS.plus+'新增特殊客戶報價</button></div>';
+
+  if(!specialList.length){
+    html += emptyState(ICONS.pricing, '尚未設定任何特殊客戶報價', '大部分客戶都適用上方統一的噸數單價；只有少數客戶需要不同的價格時，才需要在這裡另外設定。', false);
+  } else {
+    html += '<div class="client-grid">';
+    specialList.forEach(r=>{
+      const otLabel = r.overtimeStart ? (r.overtimeStart+' 至 '+(r.overtimeEnd||'之後')) : '未設定（不算加班）';
+      html += '<div class="client-card">'
+        + '<div class="name">'+escapeHtml(r.clientName)+'<span style="color:var(--pink); font-weight:700; font-size:12.5px; margin-left:6px;">'+fmtNum(r.tonnage,1)+' 噸</span></div>'
+        + '<div class="row"><span class="lab">第1小時</span>NT$'+fmtNum(r.firstHour,0)+'</div>'
+        + '<div class="row"><span class="lab">每加1hr</span>+NT$'+fmtNum(r.perHour,0)+'</div>'
+        + '<div class="row"><span class="lab">每日上限</span>NT$'+fmtNum(r.dailyCap,0)+'</div>'
+        + '<div class="row"><span class="lab">加班時間</span>'+escapeHtml(otLabel)+'</div>'
+        + '<div class="row"><span class="lab">加班每hr</span>+NT$'+fmtNum(r.overtimeRate,0)+'</div>'
+        + '<div class="actions">'
+          + '<button class="btn btn-secondary btn-sm" data-action="open-special-pricing-modal" data-id="'+r.id+'">'+ICONS.edit+'編輯</button>'
+          + '<button class="btn btn-danger btn-sm" data-action="delete-special-pricing" data-id="'+r.id+'">'+ICONS.trash+'刪除</button>'
+        + '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div class="section-title" style="margin-top:36px;"><h2>外調車行固定收費</h2><span class="sub">外調車行收費通常是固定的，設定後選擇外調對象時會自動帶出「外調費用」</span></div>';
+  html += '<div style="margin-bottom:16px;"><button class="btn btn-secondary" data-action="open-vendor-rate-modal">'+ICONS.plus+'新增固定收費</button></div>';
+
+  if(!vendorList.length){
+    html += emptyState(ICONS.pricing, '尚未設定任何外調車行固定收費', '設定好之後，訂單選「外調車」＋這個外調對象時，外調費用會自動帶入，仍可手動調整。', false);
+  } else {
+    html += '<div class="client-grid">';
+    vendorList.forEach(r=>{
+      html += '<div class="client-card">'
+        + '<div class="name">'+escapeHtml(r.vendorName)+'</div>'
+        + '<div class="row"><span class="lab">固定收費</span>NT$'+fmtNum(r.rate,0)+'</div>'
+        + '<div class="actions">'
+          + '<button class="btn btn-secondary btn-sm" data-action="open-vendor-rate-modal" data-id="'+r.id+'">'+ICONS.edit+'編輯</button>'
+          + '<button class="btn btn-danger btn-sm" data-action="delete-vendor-rate" data-id="'+r.id+'">'+ICONS.trash+'刪除</button>'
+        + '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  return html;
+}
+
+/* ============================================================
+   EXPENSES PAGE
+============================================================ */
+function renderExpensesPage(){
+  const months = distinctMonths();
+  let list = expensesInMonth(state.expenseFilters.month);
+  const q = state.expenseFilters.search.trim().toLowerCase();
+  if(q){
+    list = list.filter(x => ((x.licensePlate||'')+(x.category||'')+(x.note||'')).toLowerCase().includes(q));
+  }
+  list = list.sort((a,b)=>(b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
+  const monthTotal = expensesInMonth(state.expenseFilters.month).reduce((s,x)=>s+Number(x.amount||0),0);
+
+  let html = '';
+  html += '<div class="page-head"><div><h1>支出紀錄</h1><div class="sub">依車牌記錄油錢、保養等支出，月底會從該車號營業額中扣除</div></div>';
+  html += '<button class="btn btn-primary" data-action="open-expense-modal">'+ICONS.plus+'新增支出</button></div>';
+
+  html += '<div class="stat-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:20px;">';
+  html += statCard('c-dark', ICONS.expense, monthLabel(state.expenseFilters.month)+' 支出合計', fmtMoney(monthTotal));
+  html += statCard('c-blue', ICONS.orders, '支出筆數', fmtNum(list.length,0)+' 筆');
+  html += '</div>';
+
+  html += '<div class="filter-bar">';
+  html += '<div class="input-search">'+ICONS.search+'<input type="text" id="expenseSearchInput" placeholder="搜尋車牌、項目或備註" value="'+escapeHtml(state.expenseFilters.search)+'"></div>';
+  html += '<select class="input" id="expenseMonthSelect"><option value="all"'+(state.expenseFilters.month==='all'?' selected':'')+'>全部月份</option>';
+  months.forEach(m=>{ html += '<option value="'+m+'"'+(state.expenseFilters.month===m?' selected':'')+'>'+monthLabel(m)+'</option>'; });
+  html += '</select></div>';
+
+  if(!list.length){
+    html += emptyState(ICONS.expense, state.expenses.length ? '找不到符合條件的支出紀錄' : '尚未建立任何支出紀錄',
+      state.expenses.length ? '試著換個關鍵字，或選擇「全部月份」再查看一次。' : '按下「新增支出」開始記錄車輛的油錢、保養等費用。', false);
+  } else {
+    html += '<div class="order-list">';
+    list.forEach(x=>{
+      html += '<div class="order-row" style="grid-template-columns:1fr 1fr 1fr 1fr auto" data-action="open-expense-modal" data-id="'+x.id+'">'
+        + '<div class="cell"><div class="k">日期</div>'+fmtDate(x.date)+'</div>'
+        + '<div class="cell"><div class="k">車牌</div><div class="client-name">'+escapeHtml(x.licensePlate||'—')+'</div></div>'
+        + '<div class="cell"><div class="k">項目</div>'+escapeHtml(x.category||x.note||'—')+'</div>'
+        + '<div class="cell"><div class="k">金額</div><div class="amount">'+fmtMoney(x.amount)+'</div></div>'
+        + '<div class="row-actions">'
+          + '<button class="icon-btn" data-action="open-expense-modal" data-id="'+x.id+'" title="編輯">'+ICONS.edit+'</button>'
+          + '<button class="icon-btn gray" data-action="delete-expense" data-id="'+x.id+'" title="刪除">'+ICONS.trash+'</button>'
+        + '</div></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+/* ============================================================
+   SCHEDULE PAGE (for drivers/assistants)
+============================================================ */
+function allCrewNames(){
+  const set = new Set();
+  state.orders.forEach(o=>{
+    if(o.driver) set.add(o.driver.trim());
+    if(o.assistant) set.add(o.assistant.trim());
+  });
+  return Array.from(set).filter(Boolean).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+}
+function toLocalDate(dateStr){
+  const p = (dateStr||'').split('-').map(Number);
+  return new Date(p[0]||1970, (p[1]||1)-1, p[2]||1);
+}
+function relativeDayLabel(dateStr){
+  const target = toLocalDate(dateStr);
+  const now = new Date();
+  const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((target - t0) / 86400000);
+  if(diff===0) return '今天';
+  if(diff===1) return '明天';
+  if(diff===2) return '後天';
+  return '';
+}
+function fmtDateWithWeekday(dateStr){
+  const names = ['日','一','二','三','四','五','六'];
+  const d = toLocalDate(dateStr);
+  return (d.getMonth()+1)+'/'+d.getDate()+'（週'+names[d.getDay()]+'）';
+}
+function firstStartMinutes(o){
+  const a = timeToMinutes(o.amStart);
+  if(a!=null) return a;
+  const p = timeToMinutes(o.pmStart);
+  if(p!=null) return p;
+  return 99999;
+}
+function mapsUrl(location){
+  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(location);
+}
+function copyTextToClipboard(text, onDone){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(onDone).catch(()=>legacyCopy(text, onDone));
+  } else {
+    legacyCopy(text, onDone);
+  }
+}
+function legacyCopy(text, onDone){
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    onDone && onDone();
+  }catch(e){ alert('複製失敗，請手動選取文字複製。'); }
+}
+function buildJobShareText(o){
+  const lines = [];
+  const rel = relativeDayLabel(o.date);
+  lines.push((rel ? rel+'・' : '') + fmtDateWithWeekday(o.date));
+  lines.push('時段：'+fmtTimeRange(o));
+  lines.push('客戶：'+o.clientName);
+  if(o.location) lines.push('地點：'+o.location);
+  lines.push('車輛來源：'+fmtVehicleSource(o));
+  if(o.vehicleNo) lines.push('車號：'+o.vehicleNo);
+  if(o.driver) lines.push('司機：'+o.driver);
+  if(o.assistant) lines.push('助手：'+o.assistant);
+  if(o.workContent) lines.push('工作內容：'+o.workContent);
+  if(o.note) lines.push('備註：'+o.note);
+  if(o.location) lines.push('地圖：'+mapsUrl(o.location));
+  return lines.join('\n');
+}
+
+/* ============================================================
+   MODAL: DRIVER WORK REPORT
+============================================================ */
+function openDriverReportModal(id){
+  const o = state.orders.find(x=>x.id===id);
+  if(!o) return;
+  const html = ''
+  + '<div class="modal-overlay open" id="driverReportModalOverlay">'
+  + '<div class="modal-panel" style="max-width:460px">'
+  + '<div class="modal-head"><h3>回報實際工時</h3><button class="icon-btn gray" data-action="close-modal">'+ICONS.close+'</button></div>'
+  + '<div class="modal-body"><form id="driverReportForm">'
+  + '<input type="hidden" id="rpt_id" value="'+o.id+'">'
+  + '<div class="card" style="background:var(--light-blue); border:none; margin-bottom:16px; padding:14px 16px;">'
+    + '<div style="font-weight:700; font-size:14.5px; margin-bottom:4px;">'+escapeHtml(o.clientName)+'</div>'
+    + '<div style="font-size:12.5px; color:var(--medium);">'+fmtDate(o.date)+'・'+escapeHtml(o.location||'未填寫地點')+'</div>'
+  + '</div>'
+  + '<div class="form-grid">'
+  + '<div class="field"><label>上午時段（實際）</label><div class="time-range-row"><input type="time" step="1800" id="rpt_amStart" value="'+escapeHtml(o.amStart||'')+'"><span class="time-sep">至</span><input type="time" step="1800" id="rpt_amEnd" value="'+escapeHtml(o.amEnd||'')+'"></div></div>'
+  + '<div class="field"><label>下午時段（實際）</label><div class="time-range-row"><input type="time" step="1800" id="rpt_pmStart" value="'+escapeHtml(o.pmStart||'')+'"><span class="time-sep">至</span><input type="time" step="1800" id="rpt_pmEnd" value="'+escapeHtml(o.pmEnd||'')+'"></div></div>'
+  + '<div class="field full"><label>回報備註</label><textarea id="rpt_driverNote" placeholder="選填，例如：現場加班、有狀況要跟會計說">'+escapeHtml(o.driverNote||'')+'</textarea></div>'
+  + '</div></form></div>'
+  + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
+  + '<button class="btn btn-primary" data-action="save-driver-report">送出回報</button></div>'
+  + '</div></div>';
+  document.getElementById('modalRoot').innerHTML = html;
+}
+
+function saveDriverReportFromModal(){
+  const id = document.getElementById('rpt_id').value;
+  const idx = state.orders.findIndex(o=>o.id===id);
+  if(idx<0) return;
+  const o = state.orders[idx];
+
+  o.amStart = document.getElementById('rpt_amStart').value;
+  o.amEnd = document.getElementById('rpt_amEnd').value;
+  o.pmStart = document.getElementById('rpt_pmStart').value;
+  o.pmEnd = document.getElementById('rpt_pmEnd').value;
+  o.driverNote = document.getElementById('rpt_driverNote').value.trim();
+
+  const am = computeSessionHours(o.amStart, o.amEnd);
+  const pm = computeSessionHours(o.pmStart, o.pmEnd);
+  o.duration = (am.valid?am.hours:0) + (pm.valid?pm.hours:0);
+
+  o.reportedAt = Date.now();
+
+  saveOrders();
+  closeModal();
+  render();
+  showToast('已送出回報，等會計確認');
+}
+
+function renderSchedulePage(){
+  const crew = allCrewNames();
+  const selected = state.scheduleFilters.name;
+
+  let html = '';
+  html += '<div class="page-head"><div><h1>司機排班</h1><div class="sub">點選自己的名字，查看工作內容；做完工作記得回報實際工時</div></div></div>';
+
+  if(!crew.length){
+    html += emptyState(ICONS.schedule, '目前還沒有司機或助手資料', '在「訂單清單」新增訂單時，填寫司機或助手欄位後，這裡就會出現名單。', false);
+    return html;
+  }
+
+  html += '<div class="crew-chip-row">';
+  crew.forEach(name=>{
+    html += '<button class="chip'+(name===selected?' active':'')+'" data-action="select-crew" data-name="'+escapeHtml(name)+'">'+escapeHtml(name)+'</button>';
+  });
+  html += '</div>';
+
+  if(!selected){
+    html += emptyState(ICONS.pin, '請先點選上方的名字', '選擇自己的名字後，就會列出安排給你的工作。', false);
+    return html;
+  }
+
+  const myJobs = state.orders.filter(o => (o.driver && o.driver.trim()===selected) || (o.assistant && o.assistant.trim()===selected));
+  const today = todayStr();
+
+  const needsReport = myJobs
+    .filter(o => o.date && o.date <= today && !o.amStart && !o.amEnd && !o.pmStart && !o.pmEnd)
+    .sort((a,b)=> (a.date||'').localeCompare(b.date||'') || firstStartMinutes(a)-firstStartMinutes(b));
+
+  const upcoming = myJobs
+    .filter(o => o.date && o.date > today)
+    .sort((a,b)=> (a.date||'').localeCompare(b.date||'') || firstStartMinutes(a)-firstStartMinutes(b));
+
+  function renderJobCard(o, showReportBtn){
+    const isDriver = o.driver && o.driver.trim()===selected;
+    const teammateLabel = isDriver ? '助手' : '司機';
+    const teammateName = isDriver ? (o.assistant||'—') : (o.driver||'—');
+    const isExternal = o.vehicleSource === 'external';
+    const sourceBadge = isExternal
+      ? '<span class="source-badge external">外調'+(o.externalVendor?'：'+escapeHtml(o.externalVendor):'')+'</span>'
+      : '<span class="source-badge own">自家車</span>';
+    const hasNoTime = !o.amStart && !o.amEnd && !o.pmStart && !o.pmEnd;
+
+    let c = '<div class="job-card">';
+    c += '<span class="job-time-badge">'+fmtTimeRange(o)+'</span> '+sourceBadge;
+    c += '<div class="job-client">'+escapeHtml(o.clientName)+'</div>';
+    c += '<div class="job-row"><span class="lab">地點</span>'+escapeHtml(o.location||'未填寫')+'</div>';
+    if(o.vehicleNo) c += '<div class="job-row"><span class="lab">車號</span>'+escapeHtml(o.vehicleNo)+'</div>';
+    c += '<div class="job-row"><span class="lab">'+teammateLabel+'</span>'+escapeHtml(teammateName)+'</div>';
+    if(o.workContent) c += '<div class="job-row"><span class="lab">內容</span>'+escapeHtml(o.workContent)+'</div>';
+    if(o.note) c += '<div class="job-row"><span class="lab">備註</span>'+escapeHtml(o.note)+'</div>';
+    if(o.driverNote) c += '<div class="job-row"><span class="lab">回報</span>'+escapeHtml(o.driverNote)+'</div>';
+    c += '<div class="job-actions">';
+    if(o.location) c += '<a class="btn btn-primary btn-sm" href="'+mapsUrl(o.location)+'" target="_blank" rel="noopener">'+ICONS.pin+'Google 地圖導航</a>';
+    c += '<button class="btn btn-secondary btn-sm" data-action="copy-job-text" data-id="'+o.id+'">'+ICONS.copy+'複製工作內容</button>';
+    if(showReportBtn){
+      c += '<button class="btn btn-primary btn-sm" data-action="open-driver-report-modal" data-id="'+o.id+'">'+ICONS.edit+(hasNoTime?'回報實際工時':'修改回報')+'</button>';
+    }
+    c += '</div></div>';
+    return c;
+  }
+
+  if(needsReport.length){
+    html += '<div class="date-group-header" style="color:var(--pink);">待回報工時（'+needsReport.length+'）</div>';
+    needsReport.forEach(o=>{ html += renderJobCard(o, true); });
+  }
+
+  html += '<div class="date-group-header">即將到來的工作</div>';
+  if(!upcoming.length){
+    html += emptyState(ICONS.schedule, selected+' 目前沒有排定中的工作', '之後有新安排的工作，會自動顯示在這裡。', false);
+  } else {
+    let lastDate = null;
+    upcoming.forEach(o=>{
+      if(o.date !== lastDate){
+        lastDate = o.date;
+        const rel = relativeDayLabel(o.date);
+        html += '<div class="date-group-header">'+(rel?rel+'・':'')+fmtDateWithWeekday(o.date)+'</div>';
+      }
+      html += renderJobCard(o, false);
+    });
+  }
+
+  return html;
+}
+
+
+function renderStatsPage(){
+  const m = state.statsMonth;
+  const groupBy_dim = state.statsGroupBy === 'location' ? 'location' : 'client';
+  const list = ordersInMonth(m);
+  const expenses = expensesInMonth(m);
+  const totalAmount = list.reduce((s,o)=>s+Number(o.amount||0),0);
+  const totalExpense = expenses.reduce((s,x)=>s+Number(x.amount||0),0);
+  const totalHours = list.reduce((s,o)=>s+Number(o.duration||0),0);
+
+  function groupBy(keyFn){
+    const map = {};
+    list.forEach(o=>{
+      const k = keyFn(o);
+      if(!map[k]) map[k] = { label:k, count:0, hours:0, amount:0 };
+      map[k].count++;
+      map[k].hours += Number(o.duration||0);
+      map[k].amount += Number(o.amount||0);
+    });
+    return Object.values(map).sort((a,b)=>b.amount-a.amount);
+  }
+  function breakdownTable(rows, colLabel){
+    if(!rows.length) return '<div class="table-scroll"><p style="color:var(--gray); font-size:13px; padding:10px 2px;">本月尚無資料</p></div>';
+    const max = rows[0].amount;
+    let t = '<div class="table-scroll"><table class="stats-table"><thead><tr><th>'+colLabel+'</th><th>筆數</th><th>總時長</th><th>總金額</th><th class="bar-cell">佔比</th></tr></thead><tbody>';
+    rows.forEach(r=>{
+      const pct = max ? Math.round((r.amount/max)*100) : 0;
+      t += '<tr><td>'+escapeHtml(r.label)+'</td><td class="num">'+r.count+'</td>'
+        + '<td class="num">'+fmtNum(r.hours)+' 小時</td><td class="num">'+fmtMoney(r.amount)+'</td>'
+        + '<td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div></td></tr>';
+    });
+    t += '</tbody></table></div>';
+    return t;
+  }
+  function buildVehicleRows(){
+    const map = {};
+    list.forEach(o=>{
+      const k = o.vehicleNo ? o.vehicleNo.trim() : '未填寫車號';
+      if(!map[k]) map[k] = { label:k, count:0, hours:0, income:0, expense:0 };
+      map[k].count++;
+      map[k].hours += Number(o.duration||0);
+      map[k].income += Number(o.amount||0);
+    });
+    expenses.forEach(x=>{
+      const k = x.licensePlate ? x.licensePlate.trim() : '未填寫車牌';
+      if(!map[k]) map[k] = { label:k, count:0, hours:0, income:0, expense:0 };
+      map[k].expense += Number(x.amount||0);
+    });
+    return Object.values(map).map(r=>Object.assign({}, r, { net: r.income - r.expense })).sort((a,b)=>b.net-a.net);
+  }
+  function vehicleBreakdownTable(rows){
+    if(!rows.length) return '<div class="table-scroll"><p style="color:var(--gray); font-size:13px; padding:10px 2px;">本月尚無資料</p></div>';
+    const maxNet = Math.max.apply(null, rows.map(r=>r.net).concat([0]));
+    let t = '<div class="table-scroll"><table class="stats-table"><thead><tr><th>車號</th><th>筆數</th><th>總時長</th><th>收入</th><th>支出</th><th>淨營業額</th><th class="bar-cell">佔比</th></tr></thead><tbody>';
+    rows.forEach(r=>{
+      const pct = maxNet>0 ? Math.max(0, Math.round((r.net/maxNet)*100)) : 0;
+      t += '<tr><td>'+escapeHtml(r.label)+'</td><td class="num">'+r.count+'</td>'
+        + '<td class="num">'+fmtNum(r.hours)+' 小時</td>'
+        + '<td class="num">'+fmtMoney(r.income)+'</td>'
+        + '<td class="num" style="color:#B4574C">'+(r.expense?'−'+fmtMoney(r.expense):fmtMoney(0))+'</td>'
+        + '<td class="num" style="font-weight:900;'+(r.net<0?'color:#B4574C':'')+'">'+fmtMoney(r.net)+'</td>'
+        + '<td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div></td></tr>';
+    });
+    t += '</tbody></table></div>';
+    return t;
+  }
+
+  const clientRows = groupBy(o => o.clientName.trim() || '未填寫客戶');
+  function receivableKey(o){
+    if(groupBy_dim === 'location') return o.location ? o.location.trim() : '未填寫工地';
+    return o.clientName.trim() || '未填寫客戶';
+  }
+  const customerRows = groupBy(o => (!isPeerClient(o.clientName)) ? receivableKey(o) : null).filter(r=>r.label);
+  const peerReceivableRows = groupBy(o => isPeerClient(o.clientName) ? receivableKey(o) : null).filter(r=>r.label);
+  function buildPeerPayableRows(){
+    const map = {};
+    list.forEach(o=>{
+      if(o.vehicleSource !== 'external' || !o.vendorCost || Number(o.vendorCost)<=0) return;
+      const k = o.externalVendor ? o.externalVendor.trim() : '未填寫外調對象';
+      if(!map[k]) map[k] = { label:k, count:0, hours:0, amount:0 };
+      map[k].count++;
+      map[k].hours += Number(o.duration||0);
+      map[k].amount += Number(o.vendorCost||0);
+    });
+    return Object.values(map).sort((a,b)=>b.amount-a.amount);
+  }
+  const peerPayableRows = buildPeerPayableRows();
+  const customerTotal = customerRows.reduce((s,r)=>s+r.amount,0);
+  const peerReceivableTotal = peerReceivableRows.reduce((s,r)=>s+r.amount,0);
+  const peerPayableTotal = peerPayableRows.reduce((s,r)=>s+r.amount,0);
+  const vehicleRows = buildVehicleRows();
+  const driverRows = groupBy(o => o.driver ? o.driver.trim() : '未填寫司機');
+  const vehicleCount = new Set(list.map(o=>o.vehicleNo).filter(Boolean)).size;
+
+  let html = '';
+  html += '<div class="page-head"><div><h1>月結統計 / 對帳單</h1><div class="sub">用於月底結算各客戶應收帳款</div></div>';
+  html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">'
+    + '<input type="month" class="input" id="statsMonthInput" value="'+m+'">'
+    + '<button class="btn btn-secondary" data-action="open-invoice-modal">'+ICONS.download+'開立請款單</button>'
+    + '<button class="btn btn-secondary" data-action="export-stats-csv">'+ICONS.download+'匯出 CSV</button>'
+    + '</div></div>';
+
+  html += '<div class="filter-bar" style="align-items:center;">';
+  html += '<div class="seg-toggle"><button class="seg-btn'+(groupBy_dim==='client'?' active':'')+'" data-action="set-stats-groupby" data-value="client">依客戶</button>'
+    + '<button class="seg-btn'+(groupBy_dim==='location'?' active':'')+'" data-action="set-stats-groupby" data-value="location">依工地</button></div>';
+  html += '</div>';
+
+  html += '<div class="stat-grid">';
+  html += statCard('c-pink', ICONS.money, monthLabel(m)+' 總營收', fmtMoney(totalAmount));
+  html += statCard('c-blue', ICONS.orders, '訂單筆數', fmtNum(list.length,0)+' 筆');
+  html += statCard('c-sage', ICONS.building, '出勤車輛數', fmtNum(vehicleCount,0)+' 台');
+  html += statCard('c-dark', ICONS.clock, '合計工時', fmtNum(totalHours)+' 小時');
+  html += '</div>';
+
+  html += '<div class="stat-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:12px;">';
+  html += statCard('c-dark', ICONS.expense, monthLabel(m)+' 支出合計', fmtMoney(totalExpense));
+  html += statCard('c-pink', ICONS.money, monthLabel(m)+' 淨營收（營收−支出）', fmtMoney(totalAmount-totalExpense));
+  html += '</div>';
+
+  html += '<div class="stat-grid" style="margin-bottom:28px;">';
+  html += statCard('c-pink', ICONS.money, '客戶要給我們（本月）', fmtMoney(customerTotal));
+  html += statCard('c-blue', ICONS.money, '同行要給我們（本月）', fmtMoney(peerReceivableTotal));
+  html += statCard('c-dark', ICONS.expense, '我們要給同行（本月）', fmtMoney(peerPayableTotal));
+  html += statCard('c-sage', ICONS.exchange, '本月淨額（應收－應付）', fmtMoney(customerTotal+peerReceivableTotal-peerPayableTotal));
+  html += '</div>';
+
+  if(!list.length && !expenses.length){
+    html += emptyState(ICONS.stats, '這個月份還沒有訂單或支出資料', '選擇其他月份，或先到「訂單清單」新增資料。', false);
+    return html;
+  }
+
+  html += '<div class="section-title"><h2>客戶應收明細</h2><span class="sub">'+monthLabel(m)+'・一般客戶欠我們的錢（'+(groupBy_dim==='location'?'依工地':'依客戶')+'）</span></div>';
+  html += breakdownTable(customerRows, groupBy_dim==='location' ? '工地' : '客戶名稱');
+
+  html += '<div class="section-title"><h2>同行應收明細</h2><span class="sub">同行請我們做的工作，對方欠我們的錢（'+(groupBy_dim==='location'?'依工地':'依客戶')+'）</span></div>';
+  html += breakdownTable(peerReceivableRows, groupBy_dim==='location' ? '工地' : '同行名稱');
+
+  html += '<div class="section-title"><h2>同行應付明細</h2><span class="sub">外調同行車輛時，我們欠對方的外調費用</span></div>';
+  html += breakdownTable(peerPayableRows, '同行名稱');
+
+  const peerReceivableByNameRows = groupBy(o => isPeerClient(o.clientName) ? (o.clientName.trim() || '未填寫同行') : null).filter(r=>r.label);
+  const peerNetRows = buildPeerNetRows(peerReceivableByNameRows, peerPayableRows);
+  html += renderPeerNetTable(peerNetRows);
+
+  html += '<div class="section-title"><h2>各車輛營業額</h2><span class="sub">支援多台車，各自獨立統計；收入扣除該車號當月支出，計算淨營業額</span></div>';
+  html += vehicleBreakdownTable(vehicleRows);
+
+  html += '<div class="section-title"><h2>各司機總營業額（司機薪水參考）</h2><span class="sub">依司機分開統計，只計算總營業額，不含抽成試算</span></div>';
+  html += breakdownTable(driverRows, '司機');
+
+  html += '<div class="card" style="margin-top:10px; background:var(--light-blue); border:none;"><p style="font-size:12.5px; color:var(--medium); line-height:1.6;">💡 這裡看到的是「'+monthLabel(m)+'當月」的應收應付金額。實際收款/付款狀況（誰已經結清、誰還沒收到錢）請到「應收應付」頁面勾選銷帳——沒銷帳的項目會一直留著，跨月份也看得到，不會因為換月份就不見。</p></div>';
+
+  return html;
+}
+
+/* ============================================================
+   RECEIVABLES & PAYABLES PAGE（應收應付）
+============================================================ */
+function buildPeerNetRows(receivableRows, payableRows){
+  const recvMap = {};
+  receivableRows.forEach(r=>{ const amt = r.total!=null ? r.total : r.amount; recvMap[r.label] = (recvMap[r.label]||0) + amt; });
+  const payMap = {};
+  payableRows.forEach(r=>{ const amt = r.total!=null ? r.total : r.amount; payMap[r.label] = (payMap[r.label]||0) + amt; });
+  const names = Object.keys(recvMap).filter(n => payMap.hasOwnProperty(n));
+  return names.map(name=>{
+    const receivable = recvMap[name];
+    const payable = payMap[name];
+    const net = receivable - payable;
+    return { label:name, receivable, payable, net, netAbs: Math.abs(net), weOwe: net<0 };
+  }).sort((a,b)=>b.netAbs-a.netAbs);
+}
+function renderPeerNetTable(rows){
+  if(!rows.length) return '';
+  let t = '<div class="section-title"><h2>同行互抵</h2><span class="sub">同一個同行同時有應收與應付時，自動互抵算出淨額</span></div>';
+  t += '<div class="table-scroll"><table class="stats-table"><thead><tr><th>同行名稱</th><th>應收（對方欠我們）</th><th>應付（我們欠對方）</th><th>互抵淨額</th><th>結果</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    const color = r.weOwe ? '#B4574C' : 'var(--sage)';
+    const label = r.weOwe ? '我們應付給同行' : '同行應付給我們';
+    t += '<tr><td>'+escapeHtml(r.label)+'</td><td class="num">'+fmtMoney(r.receivable)+'</td><td class="num">'+fmtMoney(r.payable)+'</td>'
+      + '<td class="num" style="font-weight:900; color:'+color+'">'+fmtMoney(r.netAbs)+'</td>'
+      + '<td style="font-weight:700; color:'+color+'">'+label+'</td></tr>';
+  });
+  t += '</tbody></table></div>';
+  return t;
+}
+
+function buildLedgerGroups(){
+  const showSettled = state.receivablesFilters.showSettled;
+
+  const clientMap = {};
+  const peerReceivableMap = {};
+  activeOrders().forEach(o=>{
+    if(!showSettled && paymentStatusOf(o) === 'paid') return;
+    const name = o.clientName ? o.clientName.trim() : '未填寫客戶';
+    const target = isPeerClient(o.clientName) ? peerReceivableMap : clientMap;
+    if(!target[name]) target[name] = { label:name, total:0, items:[] };
+    target[name].total += Number(o.amount||0);
+    target[name].items.push(o);
+  });
+
+  const peerPayableMap = {};
+  activeOrders().forEach(o=>{
+    if(o.vehicleSource !== 'external') return;
+    if(!o.vendorCost || Number(o.vendorCost)<=0) return;
+    if(!showSettled && o.vendorSettled) return;
+    const name = o.externalVendor ? o.externalVendor.trim() : '未填寫外調對象';
+    if(!peerPayableMap[name]) peerPayableMap[name] = { label:name, total:0, items:[] };
+    peerPayableMap[name].total += Number(o.vendorCost||0);
+    peerPayableMap[name].items.push(o);
+  });
+
+  function toSortedArray(map, sortField){
+    return Object.values(map).map(g=>{
+      g.items.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+      return g;
+    }).sort((a,b)=>b.total-a.total);
+  }
+
+  return {
+    clientRows: toSortedArray(clientMap),
+    peerReceivableRows: toSortedArray(peerReceivableMap),
+    peerPayableRows: toSortedArray(peerPayableMap)
+  };
+}
+
+function renderReceivablesPage(){
+  const showSettled = state.receivablesFilters.showSettled;
+  const groups = buildLedgerGroups();
+
+  const clientTotal = groups.clientRows.reduce((s,g)=>s+g.total,0);
+  const peerReceivableTotal = groups.peerReceivableRows.reduce((s,g)=>s+g.total,0);
+  const peerPayableTotal = groups.peerPayableRows.reduce((s,g)=>s+g.total,0);
+  const netTotal = clientTotal + peerReceivableTotal - peerPayableTotal;
+
+  let html = '';
+  html += '<div class="page-head"><div><h1>應收應付</h1><div class="sub">客戶／同行欠我們的錢，以及我們欠同行的外調費用，未銷帳的項目會一直顯示到結清為止</div></div>';
+  html += '<label class="checkbox-row" style="background:#fff; border:var(--border); border-radius:999px; padding:9px 16px;"><input type="checkbox" id="showSettledToggle"'+(showSettled?' checked':'')+'> 顯示已結清項目</label>';
+  html += '</div>';
+
+  html += '<div class="stat-grid">';
+  html += statCard('c-pink', ICONS.money, '客戶應收合計', fmtMoney(clientTotal));
+  html += statCard('c-blue', ICONS.money, '同行應收合計', fmtMoney(peerReceivableTotal));
+  html += statCard('c-dark', ICONS.expense, '同行應付合計', fmtMoney(peerPayableTotal));
+  html += statCard('c-sage', ICONS.exchange, '淨額（應收－應付）', fmtMoney(netTotal));
+  html += '</div>';
+
+  const peerNetRows = buildPeerNetRows(groups.peerReceivableRows, groups.peerPayableRows);
+  html += renderPeerNetTable(peerNetRows);
+
+  function renderLedgerSection(title, sub, rows, kind){
+    let s = '<div class="section-title"><h2>'+title+'</h2><span class="sub">'+sub+'</span></div>';
+    if(!rows.length){
+      s += '<div class="table-scroll"><p style="color:var(--gray); font-size:13px; padding:10px 2px;">目前沒有'+(showSettled?'':'未結清的')+'項目</p></div>';
+      return s;
+    }
+    rows.forEach(g=>{
+      s += '<div class="card" style="margin-bottom:14px;">';
+      s += '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">'
+        + '<div style="font-weight:900; font-size:15px; color:var(--dark);">'+escapeHtml(g.label)+'</div>'
+        + '<div style="font-weight:900; font-size:15px; color:var(--pink);">'+fmtMoney(g.total)+'</div></div>';
+      g.items.forEach(o=>{
+        const amt = kind==='payable' ? Number(o.vendorCost||0) : Number(o.amount||0);
+        let statusHtml;
+        if(kind==='payable'){
+          const isSettled = o.vendorSettled;
+          statusHtml = '<button class="badge-toggle '+(isSettled?'settled':'unsettled')+'" style="margin-top:0;" data-action="toggle-vendor-settled" data-id="'+o.id+'">'+(isSettled?'已結清':'標記結清')+'</button>';
+        } else {
+          statusHtml = '<select class="badge-toggle-select '+paymentStatusClass(o.paymentStatus)+'" style="margin-top:0;" data-action="set-payment-status" data-id="'+o.id+'">'
+            + '<option value="unbilled"'+(paymentStatusOf(o)==='unbilled'?' selected':'')+'>未請款</option>'
+            + '<option value="billed"'+(paymentStatusOf(o)==='billed'?' selected':'')+'>已請款未收</option>'
+            + '<option value="paid"'+(paymentStatusOf(o)==='paid'?' selected':'')+'>已收款</option>'
+            + '</select>';
+        }
+        s += '<div class="recent-item"><div class="l">'+fmtDate(o.date)+'・'+escapeHtml(o.location||o.clientName)+'<div class="sub">'+escapeHtml(fmtTimeRange(o))+'</div></div>'
+          + '<div style="display:flex; align-items:center; gap:10px;"><span class="r">'+fmtMoney(amt)+'</span>'+statusHtml+'</div></div>';
+      });
+      s += '</div>';
+    });
+    return s;
+  }
+
+  html += renderLedgerSection('客戶應收款', '一般客戶欠我們的錢', groups.clientRows, 'receivable');
+  html += renderLedgerSection('同行應收款', '同行請我們做的工作，對方欠我們的錢', groups.peerReceivableRows, 'receivable');
+  html += renderLedgerSection('同行應付款', '外調同行車輛時，我們欠對方的外調費用', groups.peerPayableRows, 'payable');
+
+  return html;
+}
+
+/* ============================================================
+   BACKUP PAGE
+============================================================ */
+function renderEnvelopeSettingsBlock(){
+  const es = state.envelopeSettings || { orientation:'horizontal', length:22.9, width:10.5 };
+  return '<div class="backup-block"><h3>信封設定</h3><p>設定信封的方向與尺寸，「列印信封」時會依照這裡的設定排版。</p>'
+    + '<div class="form-grid">'
+    + '<div class="field full"><label>信封方向</label><select id="env_orientation">'
+      + '<option value="horizontal"'+(es.orientation==='horizontal'?' selected':'')+'>橫式</option>'
+      + '<option value="vertical"'+(es.orientation==='vertical'?' selected':'')+'>直式</option>'
+      + '</select></div>'
+    + '<div class="field"><label>長（公分）</label><input type="number" id="env_length" step="0.1" min="0" value="'+escapeHtml(es.length)+'"></div>'
+    + '<div class="field"><label>寬（公分）</label><input type="number" id="env_width" step="0.1" min="0" value="'+escapeHtml(es.width)+'"></div>'
+    + '<div class="field-hint" style="grid-column:1/-1;">長是信封比較長的那一邊、寬是比較短的那一邊；橫式會把長邊當寬度橫放，直式會把長邊當高度直放</div>'
+    + '</div>'
+    + '<div style="margin-top:14px;"><button class="btn btn-primary" data-action="save-envelope-settings">儲存信封設定</button></div>'
+    + '</div>';
+}
+
+function saveEnvelopeSettingsFromPage(){
+  state.envelopeSettings = {
+    orientation: document.getElementById('env_orientation').value,
+    length: document.getElementById('env_length').value,
+    width: document.getElementById('env_width').value
+  };
+  saveEnvelopeSettings();
+  showToast('已儲存信封設定');
+}
+
+function renderBackupPage(){
+  const co = state.companyInfo || {};
+  let html = '';
+  html += '<div class="page-head"><div><h1>設定</h1><div class="sub">公司資料、人員車輛名單、備份還原都在這裡</div></div></div>';
+
+  html += '<div class="backup-block"><h3>自家公司資料</h3><p>填寫自己公司的基本資料，未來要開請款單、發票時可以直接對照參考。</p>'
+    + '<div class="form-grid">'
+    + '<div class="field full"><label>公司名稱</label><input type="text" id="co_name" value="'+escapeHtml(co.name||'')+'"></div>'
+    + '<div class="field"><label>統一編號</label><input type="text" id="co_taxId" maxlength="8" inputmode="numeric" value="'+escapeHtml(co.taxId||'')+'"></div>'
+    + '<div class="field"><label>電話</label><input type="text" id="co_phone" value="'+escapeHtml(co.phone||'')+'"></div>'
+    + '<div class="field full"><label>地址</label><input type="text" id="co_address" value="'+escapeHtml(co.address||'')+'"></div>'
+    + '<div class="field full"><label>聯絡人</label><input type="text" id="co_contact" value="'+escapeHtml(co.contact||'')+'"></div>'
+    + '</div>'
+    + '<div style="margin-top:14px;"><button class="btn btn-primary" data-action="save-company-info">儲存公司資料</button></div>'
+    + '</div>';
+
+  html += renderEnvelopeSettingsBlock();
+
+  html += '<div class="backup-block"><h3>司機／助手名單</h3><p>先在這裡建立好名單，新增訂單時直接用選的，不用每次重新打字。</p>'
+    + '<div class="input-search" style="margin-bottom:14px;"><input type="text" id="crewNameInput" placeholder="輸入姓名後按新增" style="padding-left:13px;"></div>'
+    + '<button class="btn btn-secondary btn-sm" data-action="add-crew-name" style="margin-bottom:14px; margin-left:-4px;">'+ICONS.plus+'新增人員</button>'
+    + '<div class="tag-list">'
+    + (state.crewList.length ? state.crewList.map(n=>'<span class="tag-chip">'+escapeHtml(n)+'<button data-action="delete-crew-name" data-name="'+escapeHtml(n)+'" title="刪除">'+ICONS.close+'</button></span>').join('') : '<p style="color:var(--gray); font-size:13px;">尚未新增任何人員</p>')
+    + '</div></div>';
+
+  html += '<div class="backup-block"><h3>車牌名單</h3><p>先建立好公司車輛的車牌，新增訂單時直接選，不用每次重新打字。</p>'
+    + '<div class="input-search" style="margin-bottom:14px;"><input type="text" id="vehiclePlateInput" placeholder="輸入車牌後按新增" style="padding-left:13px;"></div>'
+    + '<button class="btn btn-secondary btn-sm" data-action="add-vehicle-plate" style="margin-bottom:14px; margin-left:-4px;">'+ICONS.plus+'新增車牌</button>'
+    + '<div class="tag-list">'
+    + (state.vehicleList.length ? state.vehicleList.map(n=>'<span class="tag-chip">'+escapeHtml(n)+'<button data-action="delete-vehicle-plate" data-name="'+escapeHtml(n)+'" title="刪除">'+ICONS.close+'</button></span>').join('') : '<p style="color:var(--gray); font-size:13px;">尚未新增任何車牌</p>')
+    + '</div></div>';
+
+  html += '<div class="backup-block"><h3>垃圾桶</h3><p>刪除的訂單或客戶會先進到這裡，可以隨時復原；確定不要了再永久刪除。</p>'
+    + '<div class="crew-chip-row" style="margin-bottom:14px;">'
+    + '<button class="chip'+(state.trashFilters.type==='orders'?' active':'')+'" data-action="set-trash-type" data-value="orders">已刪除訂單</button>'
+    + '<button class="chip'+(state.trashFilters.type==='clients'?' active':'')+'" data-action="set-trash-type" data-value="clients">已刪除客戶</button>'
+    + '</div>'
+    + renderTrashList()
+    + '</div>';
+
+  html += '<div class="backup-block"><h3>匯出備份檔</h3><p>將目前所有訂單、客戶、單價設定、支出紀錄與公司資料打包成一個 JSON 檔案，可保存到雲端硬碟或傳送到其他裝置。</p>'
+    + '<button class="btn btn-primary" data-action="export-backup">'+ICONS.download+'匯出備份檔案</button></div>';
+
+  html += '<div class="backup-block"><h3>匯入備份檔</h3><p>選擇先前匯出的 JSON 備份檔，將會<strong>覆蓋</strong>目前瀏覽器中的所有訂單、客戶、單價設定與支出紀錄，請先確認再繼續。</p>'
+    + '<button class="btn btn-secondary" data-action="import-backup">'+ICONS.upload+'選擇備份檔案並匯入</button></div>';
+
+  html += '<div class="backup-block danger"><h3 style="color:#B4574C">清空所有資料</h3><p>這會刪除目前瀏覽器中所有的訂單、客戶與支出資料（單價設定、公司資料、人員車輛名單不會被清除），且無法復原，請先完成備份再操作。</p>'
+    + '<button class="btn btn-danger" data-action="reset-all">'+ICONS.warn+'清空所有資料</button></div>';
+
+  return html;
+}
+
+function renderTrashList(){
+  const type = state.trashFilters.type === 'clients' ? 'clients' : 'orders';
+  if(type === 'orders'){
+    const trashed = state.orders.filter(o=>o.deletedAt).sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0));
+    if(!trashed.length) return '<p style="color:var(--gray); font-size:13px;">垃圾桶目前是空的</p>';
+    return '<div class="order-list">' + trashed.map(o=>(
+      '<div class="order-row" style="grid-template-columns:1fr 1fr 1fr auto">'
+      + '<div class="cell"><div class="k">客戶</div>'+escapeHtml(o.clientName)+'</div>'
+      + '<div class="cell"><div class="k">日期</div>'+fmtDate(o.date)+'</div>'
+      + '<div class="cell"><div class="k">金額</div><div class="amount">'+fmtMoney(o.amount)+'</div></div>'
+      + '<div class="row-actions">'
+        + '<button class="btn btn-secondary btn-sm" data-action="restore-order" data-id="'+o.id+'">復原</button>'
+        + '<button class="btn btn-danger btn-sm" data-action="purge-order" data-id="'+o.id+'">'+ICONS.trash+'永久刪除</button>'
+      + '</div></div>'
+    )).join('') + '</div>';
+  } else {
+    const trashed = state.clients.filter(c=>c.deletedAt).sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0));
+    if(!trashed.length) return '<p style="color:var(--gray); font-size:13px;">垃圾桶目前是空的</p>';
+    return '<div class="client-grid">' + trashed.map(c=>(
+      '<div class="client-card">'
+      + '<div class="name">'+escapeHtml(c.name)+'</div>'
+      + '<div class="row"><span class="lab">統編</span>'+escapeHtml(c.taxId||'—')+'</div>'
+      + '<div class="actions">'
+        + '<button class="btn btn-secondary btn-sm" data-action="restore-client" data-id="'+c.id+'">復原</button>'
+        + '<button class="btn btn-danger btn-sm" data-action="purge-client" data-id="'+c.id+'">'+ICONS.trash+'永久刪除</button>'
+      + '</div></div>'
+    )).join('') + '</div>';
+  }
+}
+
+function restoreOrder(id){
+  const o = state.orders.find(x=>x.id===id);
+  if(!o) return;
+  o.deletedAt = null;
+  saveOrders();
+  render();
+  showToast('已復原訂單');
+}
+function purgeOrder(id){
+  const o = state.orders.find(x=>x.id===id);
+  if(!o) return;
+  showConfirmModal('確定要永久刪除這筆訂單嗎？永久刪除後無法復原。', function(){
+    state.orders = state.orders.filter(x=>x.id!==id);
+    saveOrders();
+    render();
+    showToast('已永久刪除');
+  }, { danger:true, okLabel:'永久刪除' });
+}
+function restoreClient(id){
+  const c = state.clients.find(x=>x.id===id);
+  if(!c) return;
+  c.deletedAt = null;
+  saveClients();
+  render();
+  showToast('已復原客戶');
+}
+function purgeClient(id){
+  const c = state.clients.find(x=>x.id===id);
+  if(!c) return;
+  showConfirmModal('確定要永久刪除這位客戶嗎？永久刪除後無法復原。', function(){
+    state.clients = state.clients.filter(x=>x.id!==id);
+    saveClients();
+    render();
+    showToast('已永久刪除');
+  }, { danger:true, okLabel:'永久刪除' });
+}
+
+function saveCompanyInfoFromPage(){
+  state.companyInfo = {
+    name: document.getElementById('co_name').value.trim(),
+    taxId: document.getElementById('co_taxId').value.trim(),
+    phone: document.getElementById('co_phone').value.trim(),
+    address: document.getElementById('co_address').value.trim(),
+    contact: document.getElementById('co_contact').value.trim()
+  };
+  saveCompanyInfo();
+  showToast('已儲存公司資料');
+}
+
+function addCrewName(){
+  const input = document.getElementById('crewNameInput');
+  const name = input.value.trim();
+  if(!name) return;
+  if(state.crewList.includes(name)){ showToast('已經有這個名字了'); return; }
+  state.crewList.push(name);
+  state.crewList.sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  saveCrewList();
+  input.value = '';
+  rerenderPreservingFocus();
+  showToast('已新增「'+name+'」');
+}
+function deleteCrewName(name){
+  showConfirmModal('確定要刪除「'+name+'」嗎？（不會刪除已建立的訂單紀錄）', function(){
+    state.crewList = state.crewList.filter(n=>n!==name);
+    saveCrewList();
+    render();
+    showToast('已刪除');
+  }, { danger:true, okLabel:'刪除' });
+}
+function addVehiclePlate(){
+  const input = document.getElementById('vehiclePlateInput');
+  const plate = input.value.trim();
+  if(!plate) return;
+  if(state.vehicleList.includes(plate)){ showToast('已經有這個車牌了'); return; }
+  state.vehicleList.push(plate);
+  state.vehicleList.sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  saveVehicleList();
+  input.value = '';
+  rerenderPreservingFocus();
+  showToast('已新增「'+plate+'」');
+}
+function deleteVehiclePlate(plate){
+  showConfirmModal('確定要刪除車牌「'+plate+'」嗎？（不會刪除已建立的訂單紀錄）', function(){
+    state.vehicleList = state.vehicleList.filter(n=>n!==plate);
+    saveVehicleList();
+    render();
+    showToast('已刪除');
+  }, { danger:true, okLabel:'刪除' });
+}
+
+/* ============================================================
+   MODAL: ORDER
+============================================================ */
+function openOrderModal(id){
+  const order = id ? state.orders.find(o=>o.id===id) : null;
+  const client = order ? findClientByName(order.clientName) : null;
+
+  const clientNames = activeClients().map(c=>c.name);
+  const locationOptions = Array.from(new Set(state.orders.map(o=>o.location).filter(Boolean)));
+  const workContentOptions = Array.from(new Set(state.orders.map(o=>o.workContent).filter(Boolean)));
+  const tonnageOptions = Array.from(new Set(state.orders.map(o=>o.tonnage).concat(state.pricingRules.map(r=>r.tonnage)).filter(v=>v!==''&&v!=null)));
+  const vehicleOptions = Array.from(new Set(state.vehicleList.concat(order&&order.vehicleNo?[order.vehicleNo]:[])));
+  const driverOptions = Array.from(new Set(state.crewList.concat(order&&order.driver?[order.driver]:[])));
+  const assistantOptions = Array.from(new Set(state.crewList.concat(order&&order.assistant?[order.assistant]:[])));
+  const vendorOptions = Array.from(new Set(state.vendorRates.map(v=>v.vendorName).concat(state.orders.map(o=>o.externalVendor)).filter(Boolean)));
+
+  const v = order || { clientName:'', clientTaxId:'', date: todayStr(), amStart:'', amEnd:'', pmStart:'', pmEnd:'', location:'', duration:'', amount:'', workContent:'', tonnage:'', docketNo:'', vehicleNo:'', driver:'', assistant:'', vehicleSource:'own', externalVendor:'', vendorCost:'', paymentStatus:'unbilled', taxType:'included', note:'' };
+
+  const html = ''
+  + '<div class="modal-overlay open" id="orderModalOverlay">'
+  + '<div class="modal-panel">'
+  + '<div class="modal-head"><h3>'+(order?'編輯訂單':'新增訂單')+'</h3><button class="icon-btn gray" data-action="close-modal">'+ICONS.close+'</button></div>'
+  + '<div class="modal-body">'
+  + '<form id="orderForm">'
+  + '<input type="hidden" id="f_id" value="'+(order?order.id:'')+'">'
+  + '<div class="form-grid">'
+
+  + '<div class="field full"><label>客戶名稱 <span class="req">*</span></label>'
+  + '<input type="text" id="f_clientName" list="clientNameList" required value="'+escapeHtml(v.clientName)+'" placeholder="輸入或選擇客戶名稱">'
+  + '<datalist id="clientNameList">'+clientNames.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
+  + '</div>'
+
+  + '<div class="field"><label>客戶統編</label><input type="text" id="f_clientTaxId" maxlength="8" inputmode="numeric" value="'+escapeHtml(v.clientTaxId)+'" placeholder="8 碼統一編號（選填）"></div>'
+  + '<div class="field"><label>工作日期 <span class="req">*</span></label><input type="date" id="f_date" required value="'+escapeHtml(v.date)+'"></div>'
+  + '<div class="field full"><label>簽單編號</label><input type="text" id="f_docketNo" value="'+escapeHtml(v.docketNo||'')+'" placeholder="選填"></div>'
+
+  + '<div class="field"><label>上午時段</label><div class="time-range-row">'+timeSelectHtml('f_amStart', v.amStart)+'<span class="time-sep">至</span>'+timeSelectHtml('f_amEnd', v.amEnd)+'</div></div>'
+  + '<div class="field"><label>下午時段</label><div class="time-range-row">'+timeSelectHtml('f_pmStart', v.pmStart)+'<span class="time-sep">至</span>'+timeSelectHtml('f_pmEnd', v.pmEnd)+'</div></div>'
+  + '<div class="field full"><label>總時長（自動計算）</label><div class="duration-display" id="durationDisplay">0 小時</div><div class="field-hint" id="durationWarn" style="color:#B4574C"></div><input type="hidden" id="f_duration" value="'+escapeHtml(v.duration)+'"></div>'
+
+  + '<div class="field full"><label>工作地點</label><input type="text" id="f_location" list="locationList" value="'+escapeHtml(v.location)+'" placeholder="施工地點（工地）"></div>'
+  + '<datalist id="locationList">'+locationOptions.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
+
+  + '<div class="field full"><label>工作內容</label><input type="text" id="f_workContent" list="workContentList" value="'+escapeHtml(v.workContent)+'" placeholder="例如：吊掛鋼構、機具搬運（選填，說明用）"></div>'
+  + '<datalist id="workContentList">'+workContentOptions.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
+
+  + '<div class="field full"><label>噸數 <span class="req">*</span></label><input type="number" id="f_tonnage" list="tonnageList" step="0.1" min="0" required value="'+escapeHtml(v.tonnage)+'" placeholder="例如 25">'
+  + '<div class="field-hint">與「客戶名稱」組合起來，是單價設定自動帶出金額的依據</div></div>'
+  + '<datalist id="tonnageList">'+tonnageOptions.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
+
+  + '<div class="field full"><label>車輛來源</label><select id="f_vehicleSource"><option value="own"'+((v.vehicleSource||'own')==='own'?' selected':'')+'>自家車</option><option value="external"'+(v.vehicleSource==='external'?' selected':'')+'>外調車</option></select></div>'
+  + '<div class="field" id="externalVendorField" style="'+(v.vehicleSource==='external'?'':'display:none')+'"><label>外調對象（同行）</label><input type="text" id="f_externalVendor" list="vendorList" value="'+escapeHtml(v.externalVendor||'')+'" placeholder="外調的吊車行／司機名稱"></div>'
+  + '<div class="field" id="vendorCostField" style="'+(v.vehicleSource==='external'?'':'display:none')+'"><label>外調費用（需付給對方）</label><input type="number" id="f_vendorCost" step="1" min="0" value="'+escapeHtml(v.vendorCost||'')+'" placeholder="NT$（選填，同行固定收費可自動帶出）"></div>'
+  + '<datalist id="vendorList">'+vendorOptions.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
+
+  + '<div class="field"><label>車牌</label><select id="f_vehicleNo"><option value=""'+(!v.vehicleNo?' selected':'')+'>未指派</option>'+vehicleOptions.map(n=>'<option value="'+escapeHtml(n)+'"'+(v.vehicleNo===n?' selected':'')+'>'+escapeHtml(n)+'</option>').join('')+'</select></div>'
+  + '<div class="field"><label>司機</label><select id="f_driver"><option value=""'+(!v.driver?' selected':'')+'>未指派</option>'+driverOptions.map(n=>'<option value="'+escapeHtml(n)+'"'+(v.driver===n?' selected':'')+'>'+escapeHtml(n)+'</option>').join('')+'</select></div>'
+  + '<div class="field full"><label>助手</label><select id="f_assistant"><option value=""'+(!v.assistant?' selected':'')+'>未指派</option>'+assistantOptions.map(n=>'<option value="'+escapeHtml(n)+'"'+(v.assistant===n?' selected':'')+'>'+escapeHtml(n)+'</option>').join('')+'</select><div class="field-hint">名單可以到「設定」頁面新增或刪除司機／助手／車牌</div></div>'
+
+  + '<div class="field full"><label>金額 <span class="req">*</span></label>'
+  + '<div style="display:flex; gap:8px;"><input type="number" id="f_amount" style="flex:1" step="1" min="0" required value="'+escapeHtml(v.amount)+'" placeholder="NT$">'
+  + '<button type="button" class="btn btn-secondary btn-sm" id="recalcAmountBtn" style="flex-shrink:0; white-space:nowrap;">重新試算</button></div>'
+  + '<div class="field-hint" id="amountHint"></div>'
+  + '<div class="field-hint" id="taxPreview" style="color:var(--blue)"></div></div>'
+
+  + '<div class="field"><label>金流狀態</label><select id="f_paymentStatus">'
+  + '<option value="unbilled"'+(v.paymentStatus==='unbilled'?' selected':'')+'>未請款</option>'
+  + '<option value="billed"'+(v.paymentStatus==='billed'?' selected':'')+'>已請款未收</option>'
+  + '<option value="paid"'+(v.paymentStatus==='paid'?' selected':'')+'>已收款</option>'
+  + '</select></div>'
+  + '<div class="field"><label>稅別</label><select id="f_taxType">'
+  + '<option value="included"'+(v.taxType==='included'?' selected':'')+'>內含</option>'
+  + '<option value="added"'+(v.taxType==='added'?' selected':'')+'>外加</option>'
+  + '<option value="exempt"'+(v.taxType==='exempt'?' selected':'')+'>免稅</option>'
+  + '</select></div>'
+
+  + '<div class="field full"><label>備註</label><textarea id="f_note" placeholder="選填">'+escapeHtml(v.note||'')+'</textarea></div>'
+
+  + '<div class="field full"><label class="checkbox-row"><input type="checkbox" id="f_saveClient" checked> 同時更新／新增客戶資料（統編）</label></div>'
+
+  + '</div>'
+  + '</form>'
+  + '</div>'
+  + '<div class="modal-foot">'
+  + '<button class="btn btn-secondary" data-action="close-modal">取消</button>'
+  + '<button class="btn btn-primary" data-action="save-order">'+ICONS.plus+(order?'儲存變更':'新增訂單')+'</button>'
+  + '</div>'
+  + '</div></div>';
+
+  document.getElementById('modalRoot').innerHTML = html;
+  bindOrderModalEvents(order ? order.id : null, order);
+}
+
+function timeSelectHtml(id, currentValue){
+  let opts = '<option value=""'+(!currentValue?' selected':'')+'>—</option>';
+  for(let m=0; m<1440; m+=30){
+    const h = String(Math.floor(m/60)).padStart(2,'0');
+    const mm = String(m%60).padStart(2,'0');
+    const t = h+':'+mm;
+    opts += '<option value="'+t+'"'+(currentValue===t?' selected':'')+'>'+t+'</option>';
+  }
+  return '<select id="'+id+'">'+opts+'</select>';
+}
+
+/* ---- time-range -> duration helpers ---- */
+function timeToMinutes(t){
+  if(!t) return null;
+  const parts = t.split(':');
+  if(parts.length<2) return null;
+  const h = Number(parts[0]), m = Number(parts[1]);
+  if(isNaN(h)||isNaN(m)) return null;
+  return h*60+m;
+}
+function computeSessionHours(start,end){
+  const s = timeToMinutes(start), e = timeToMinutes(end);
+  if(s==null || e==null) return { hours:0, valid:true };
+  if(e<=s) return { hours:0, valid:false };
+  return { hours:(e-s)/60, valid:true };
+}
+function recomputeDuration(){
+  const am = computeSessionHours(document.getElementById('f_amStart').value, document.getElementById('f_amEnd').value);
+  const pm = computeSessionHours(document.getElementById('f_pmStart').value, document.getElementById('f_pmEnd').value);
+  const total = (am.valid?am.hours:0) + (pm.valid?pm.hours:0);
+  document.getElementById('f_duration').value = total;
+  document.getElementById('durationDisplay').textContent = fmtNum(total) + ' 小時';
+  const warnMsgs = [];
+  if(!am.valid) warnMsgs.push('上午迄時間需晚於起始時間');
+  if(!pm.valid) warnMsgs.push('下午迄時間需晚於起始時間');
+  document.getElementById('durationWarn').textContent = warnMsgs.join('；');
+}
+function initDurationDisplay(order){
+  const hasNewFields = order && (order.amStart || order.amEnd || order.pmStart || order.pmEnd);
+  if(hasNewFields){
+    recomputeDuration();
+  } else {
+    const legacy = order && order.duration ? Number(order.duration) : 0;
+    document.getElementById('f_duration').value = legacy;
+    document.getElementById('durationDisplay').textContent = fmtNum(legacy) + ' 小時' + (order && legacy ? '（舊資料，輸入上／下午時段可重新自動計算）' : '');
+  }
+}
+
+/* ---- tonnage -> pricing lookup, with client-specific override ---- */
+function findPricingRule(tonnage){
+  if(tonnage === '' || tonnage == null) return null;
+  return state.pricingRules.find(r => String(r.tonnage) === String(tonnage)) || null;
+}
+function findSpecialPricingRule(clientName, tonnage){
+  if(!clientName || tonnage === '' || tonnage == null) return null;
+  const name = clientName.trim();
+  return state.specialPricing.find(r => (r.clientName||'').trim()===name && String(r.tonnage)===String(tonnage)) || null;
+}
+function findVendorRate(vendorName){
+  if(!vendorName) return null;
+  const name = vendorName.trim();
+  return state.vendorRates.find(r => (r.vendorName||'').trim()===name) || null;
+}
+const DAILY_NORMAL_HOURS = 8;
+const FIRST_HOUR_MINUTES = 60;
+/* Splits worked time into: the flat-fee first hour (not returned, always charged separately),
+   and the remaining "extra" time, itself split into extraNormalHours / extraOvertimeHours
+   depending on whether each extra minute falls after the daily 8-hour mark or after the
+   configured overtime clock-time window. The first 60 minutes of cumulative work are always
+   excluded from this split — they're covered by the flat first-hour fee no matter when they fall. */
+function splitBillableHours(amStart,amEnd,pmStart,pmEnd,startStr,endStr){
+  const intervals = [];
+  function addInterval(s,e){
+    const sm=timeToMinutes(s), em=timeToMinutes(e);
+    if(sm!=null && em!=null && em>sm) intervals.push([sm,em]);
+  }
+  addInterval(amStart,amEnd);
+  addInterval(pmStart,pmEnd);
+  if(!intervals.length) return { extraNormalHours:0, extraOvertimeHours:0 };
+  intervals.sort((a,b)=>a[0]-b[0]);
+
+  const dailyThresholdMin = DAILY_NORMAL_HOURS * 60; // rule 1: hours beyond 8/day are overtime
+  const timeThreshold = timeToMinutes(startStr); // rule 2: clock time after this is overtime (optional)
+  const endThreshold = timeToMinutes(endStr);
+  const timeUpperBound = endThreshold==null ? Infinity : endThreshold;
+
+  let cumulative = 0; // minutes worked so far, before the current interval
+  let extraNormalMinutes = 0;
+  let extraOvertimeMinutes = 0;
+  intervals.forEach(([s,e])=>{
+    const len = e - s;
+    for(let offset=0; offset<len; offset++){
+      const cumIndex = cumulative + offset; // this minute's position among all minutes worked today
+      if(cumIndex < FIRST_HOUR_MINUTES) continue; // part of the flat first-hour fee, not rate-classified
+      const clockMinute = s + offset;
+      const isDailyOT = cumIndex >= dailyThresholdMin;
+      const isTimeOT = timeThreshold!=null && clockMinute >= timeThreshold && clockMinute < timeUpperBound;
+      if(isDailyOT || isTimeOT) extraOvertimeMinutes++;
+      else extraNormalMinutes++;
+    }
+    cumulative += len;
+  });
+  return { extraNormalHours: extraNormalMinutes/60, extraOvertimeHours: extraOvertimeMinutes/60 };
+}
+function calcPricingSuggestion(rule, totalHours){
+  if(!rule || totalHours<=0) return null;
+  const split = splitBillableHours(
+    document.getElementById('f_amStart') ? document.getElementById('f_amStart').value : '',
+    document.getElementById('f_amEnd') ? document.getElementById('f_amEnd').value : '',
+    document.getElementById('f_pmStart') ? document.getElementById('f_pmStart').value : '',
+    document.getElementById('f_pmEnd') ? document.getElementById('f_pmEnd').value : '',
+    rule.overtimeStart, rule.overtimeEnd
+  );
+  const firstHourFee = Number(rule.firstHour||0); // always charged, regardless of when the first hour falls
+  const tieredExtra = split.extraNormalHours * Number(rule.perHour||0);
+  const rawBase = firstHourFee + tieredExtra;
+  const cap = Number(rule.dailyCap||0);
+  const cappedBase = cap>0 ? Math.min(rawBase, cap) : rawBase;
+  const overtimeAmt = split.extraOvertimeHours * Number(rule.overtimeRate||0);
+  const total = Math.round(cappedBase + overtimeAmt);
+  return { total, tiered: cappedBase, overtimeAmt, overtimeHours: split.extraOvertimeHours, normalHours: 1 + split.extraNormalHours, hitCap: cap>0 && rawBase>cap };
+}
+
+function bindOrderModalEvents(excludeId, order){
+  const nameEl = document.getElementById('f_clientName');
+  const taxEl = document.getElementById('f_clientTaxId');
+  const tonEl = document.getElementById('f_tonnage');
+  const amtEl = document.getElementById('f_amount');
+  const hintEl = document.getElementById('amountHint');
+  const taxPreviewEl = document.getElementById('taxPreview');
+  const recalcBtn = document.getElementById('recalcAmountBtn');
+  let amountAutoFilled = false; // true only while the amount field holds a value WE filled in, not something the user typed
+
+  function getTimes(){
+    return {
+      amStart: document.getElementById('f_amStart').value,
+      amEnd: document.getElementById('f_amEnd').value,
+      pmStart: document.getElementById('f_pmStart').value,
+      pmEnd: document.getElementById('f_pmEnd').value
+    };
+  }
+
+  function updateTaxPreview(){
+    const amt = Number(amtEl.value) || 0;
+    const taxType = document.getElementById('f_taxType').value;
+    if(amt<=0){ taxPreviewEl.textContent = ''; return; }
+    if(taxType === 'exempt'){
+      taxPreviewEl.textContent = '免稅，不需計算稅額';
+    } else if(taxType === 'added'){
+      const tax = Math.round(amt * 0.05);
+      const grand = amt + tax;
+      taxPreviewEl.textContent = '稅額（+5%）：NT$'+fmtNum(tax,0)+'　含稅合計：NT$'+fmtNum(grand,0);
+    } else {
+      const taxIncluded = Math.round(amt - amt/1.05);
+      taxPreviewEl.textContent = '此金額已內含稅額約：NT$'+fmtNum(taxIncluded,0);
+    }
+  }
+
+  function calcAndFillAmount(force){
+    if(!force && amtEl.value !== '' && !amountAutoFilled) { updateTaxPreview(); return; }
+    const tonnage = tonEl.value;
+    const totalHours = Number(document.getElementById('f_duration').value) || 0;
+    const specialRule = findSpecialPricingRule(nameEl.value, tonnage);
+    const rule = specialRule || findPricingRule(tonnage);
+
+    if(rule && totalHours>0){
+      const calc = calcPricingSuggestion(rule, totalHours);
+      if(calc){
+        amtEl.value = calc.total;
+        amountAutoFilled = true;
+        let msg = specialRule
+          ? '💡 依【特殊客戶】'+escapeHtml(nameEl.value.trim())+' 專屬單價試算：'
+          : '💡 依 '+fmtNum(rule.tonnage,1)+'噸單價試算：';
+        msg += '基本 NT$'+fmtNum(calc.tiered,0)+'（正常工時 '+fmtNum(calc.normalHours)+' 小時'+(calc.hitCap?'，已達每日上限':'')+'）';
+        if(calc.overtimeHours>0){
+          msg += ' + 加班 '+fmtNum(calc.overtimeHours)+' 小時 NT$'+fmtNum(calc.overtimeAmt,0);
+        }
+        msg += ' ＝ NT$'+fmtNum(calc.total,0)+'，可自行修改';
+        hintEl.textContent = msg;
+        updateTaxPreview();
+        return;
+      }
+    }
+    // fallback: use history (same client + tonnage) when no pricing rule matches
+    const s = suggestAmount(nameEl.value, tonnage, excludeId);
+    if(s){
+      amtEl.value = s.amount;
+      amountAutoFilled = true;
+      hintEl.textContent = s.exact ? '💡 已自動帶入該客戶、相同噸數的上次金額（NT$ '+fmtNum(s.amount,0)+'），可自行修改' : '💡 已帶入該客戶最近一筆金額作為參考（噸數不同），可自行修改';
+    } else if(force){
+      hintEl.textContent = '目前這個噸數尚未設定單價，也找不到歷史紀錄可參考，請手動輸入金額。';
+    }
+    updateTaxPreview();
+  }
+
+  function applyClientAutofill(){
+    const c = findClientByName(nameEl.value);
+    if(c){
+      if(!taxEl.value) taxEl.value = c.taxId||'';
+    }
+    calcAndFillAmount(false);
+  }
+
+  nameEl.addEventListener('change', applyClientAutofill);
+  tonEl.addEventListener('change', ()=>calcAndFillAmount(false));
+  tonEl.addEventListener('input', ()=>calcAndFillAmount(false));
+  amtEl.addEventListener('input', ()=>{ amountAutoFilled = false; hintEl.textContent = ''; updateTaxPreview(); });
+  document.getElementById('f_taxType').addEventListener('change', updateTaxPreview);
+  recalcBtn.addEventListener('click', ()=>calcAndFillAmount(true));
+
+  ['f_amStart','f_amEnd','f_pmStart','f_pmEnd'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', function(){
+      recomputeDuration();
+      calcAndFillAmount(false);
+    });
+  });
+
+  const sourceEl = document.getElementById('f_vehicleSource');
+  const vendorField = document.getElementById('externalVendorField');
+  const vendorCostField = document.getElementById('vendorCostField');
+  const vendorEl = document.getElementById('f_externalVendor');
+  const vendorCostEl = document.getElementById('f_vendorCost');
+  sourceEl.addEventListener('change', ()=>{
+    const isExternal = sourceEl.value === 'external';
+    vendorField.style.display = isExternal ? '' : 'none';
+    vendorCostField.style.display = isExternal ? '' : 'none';
+    if(!isExternal){
+      vendorEl.value = '';
+      vendorCostEl.value = '';
+    }
+  });
+  vendorEl.addEventListener('change', ()=>{
+    if(vendorCostEl.value !== '') return;
+    const vr = findVendorRate(vendorEl.value);
+    if(vr) vendorCostEl.value = vr.rate;
+  });
+
+  updateTaxPreview();
+  initDurationDisplay(order);
+}
+
+function saveOrderFromModal(){
+  const form = document.getElementById('orderForm');
+  if(!form.reportValidity()) return;
+
+  const id = document.getElementById('f_id').value || uid();
+  const isNew = !document.getElementById('f_id').value;
+  const clientName = document.getElementById('f_clientName').value.trim();
+  const clientTaxId = document.getElementById('f_clientTaxId').value.trim();
+  const date = document.getElementById('f_date').value;
+  const docketNo = document.getElementById('f_docketNo').value.trim();
+  const amStart = document.getElementById('f_amStart').value;
+  const amEnd = document.getElementById('f_amEnd').value;
+  const pmStart = document.getElementById('f_pmStart').value;
+  const pmEnd = document.getElementById('f_pmEnd').value;
+  const location = document.getElementById('f_location').value.trim();
+  const duration = document.getElementById('f_duration').value;
+  const workContent = document.getElementById('f_workContent').value.trim();
+  const tonnage = document.getElementById('f_tonnage').value;
+  const vehicleNo = document.getElementById('f_vehicleNo').value.trim();
+  const driver = document.getElementById('f_driver').value.trim();
+  const assistant = document.getElementById('f_assistant').value.trim();
+  const vehicleSource = document.getElementById('f_vehicleSource').value;
+  const externalVendor = vehicleSource === 'external' ? document.getElementById('f_externalVendor').value.trim() : '';
+  const vendorCost = vehicleSource === 'external' ? document.getElementById('f_vendorCost').value : '';
+  const amount = document.getElementById('f_amount').value;
+  const paymentStatus = document.getElementById('f_paymentStatus').value;
+  const taxType = document.getElementById('f_taxType').value;
+  const note = document.getElementById('f_note').value.trim();
+  const saveClient = document.getElementById('f_saveClient').checked;
+
+  const record = { id, clientName, clientTaxId, date, docketNo, amStart, amEnd, pmStart, pmEnd, location, duration, amount, workContent, tonnage, vehicleNo, driver, assistant, vehicleSource, externalVendor, vendorCost, paymentStatus, taxType, note };
+
+  if(isNew){
+    record.createdAt = Date.now();
+    record.vendorSettled = false;
+    record.vendorSettledAt = null;
+    state.orders.push(record);
+  } else {
+    const idx = state.orders.findIndex(o=>o.id===id);
+    const prev = state.orders[idx];
+    record.createdAt = prev.createdAt;
+    record.updatedAt = Date.now();
+    record.vendorSettled = prev.vendorSettled || false;
+    record.vendorSettledAt = prev.vendorSettledAt || null;
+    record.deletedAt = prev.deletedAt || null;
+    state.orders[idx] = record;
+  }
+  saveOrders();
+
+  if(saveClient) upsertClientFromOrder(clientName, clientTaxId, '');
+
+  closeModal();
+  render();
+  showToast(isNew ? '已新增訂單' : '已儲存變更');
+}
+
+function deleteOrder(id){
+  const o = state.orders.find(x=>x.id===id);
+  if(!o) return;
+  showConfirmModal('確定要刪除「'+o.clientName+'」'+fmtDate(o.date)+'的這筆訂單嗎？刪除後可以到「設定」頁的垃圾桶復原。', function(){
+    o.deletedAt = Date.now();
+    saveOrders();
+    render();
+    showToast('已刪除訂單，可到垃圾桶復原');
+  }, { danger:true, okLabel:'刪除' });
+}
+
+/* ============================================================
+   MODAL: CLIENT
+============================================================ */
+function openClientModal(id){
+  const client = id ? state.clients.find(c=>c.id===id) : null;
+  const v = client || { name:'', taxId:'', address:'', phone:'', type:'client', note:'' };
+  const html = ''
+  + '<div class="modal-overlay open" id="clientModalOverlay">'
+  + '<div class="modal-panel" style="max-width:460px">'
+  + '<div class="modal-head"><h3>'+(client?'編輯客戶':'新增客戶')+'</h3><button class="icon-btn gray" data-action="close-modal">'+ICONS.close+'</button></div>'
+  + '<div class="modal-body"><form id="clientForm">'
+  + '<input type="hidden" id="c_id" value="'+(client?client.id:'')+'">'
+  + '<div class="form-grid">'
+  + '<div class="field full"><label>類型</label><select id="c_type"><option value="client"'+((v.type||'client')==='client'?' selected':'')+'>客戶（一般業主）</option><option value="peer"'+(v.type==='peer'?' selected':'')+'>同行（協力廠商）</option></select></div>'
+  + '<div class="field full"><label>客戶名稱 <span class="req">*</span></label><input type="text" id="c_name" required value="'+escapeHtml(v.name)+'"></div>'
+  + '<div class="field"><label>統一編號</label><input type="text" id="c_taxId" maxlength="8" inputmode="numeric" value="'+escapeHtml(v.taxId)+'"></div>'
+  + '<div class="field"><label>聯絡電話</label><input type="text" id="c_phone" value="'+escapeHtml(v.phone)+'"></div>'
+  + '<div class="field full"><label>地址</label><input type="text" id="c_address" value="'+escapeHtml(v.address)+'"></div>'
+  + '<div class="field full"><label>備註</label><textarea id="c_note">'+escapeHtml(v.note||'')+'</textarea></div>'
+  + '</div></form></div>'
+  + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
+  + '<button class="btn btn-primary" data-action="save-client">'+(client?'儲存變更':'新增客戶')+'</button></div>'
+  + '</div></div>';
+  document.getElementById('modalRoot').innerHTML = html;
+}
+
+function saveClientFromModal(){
+  const form = document.getElementById('clientForm');
+  if(!form.reportValidity()) return;
+  const id = document.getElementById('c_id').value || uid();
+  const isNew = !document.getElementById('c_id').value;
+  const name = document.getElementById('c_name').value.trim();
+
+  function doSave(){
+    const record = {
+      id, name,
+      type: document.getElementById('c_type').value || 'client',
+      taxId: document.getElementById('c_taxId').value.trim(),
+      phone: document.getElementById('c_phone').value.trim(),
+      address: document.getElementById('c_address').value.trim(),
+      note: document.getElementById('c_note').value.trim()
+    };
+    if(isNew){
+      record.createdAt = Date.now();
+      state.clients.push(record);
+    } else {
+      const idx = state.clients.findIndex(c=>c.id===id);
+      record.createdAt = state.clients[idx].createdAt;
+      state.clients[idx] = record;
+    }
+    saveClients();
+    closeModal();
+    render();
+    showToast(isNew ? '已新增客戶' : '已儲存變更');
+  }
+
+  if(isNew && findClientByName(name)){
+    showConfirmModal('已經有相同名稱的客戶了，仍要新增一筆重複的客戶資料嗎？', doSave, { okLabel:'仍要新增' });
+  } else {
+    doSave();
+  }
+}
+
+function deleteClient(id){
+  const c = state.clients.find(x=>x.id===id);
+  if(!c) return;
+  showConfirmModal('確定要刪除客戶「'+c.name+'」的資料嗎？（不會刪除已建立的訂單紀錄，可以到「設定」頁的垃圾桶復原）', function(){
+    c.deletedAt = Date.now();
+    saveClients();
+    render();
+    showToast('已刪除客戶，可到垃圾桶復原');
+  }, { danger:true, okLabel:'刪除' });
+}
+
+/* ============================================================
+   MODAL: PRICING RULE (依噸數)
+============================================================ */
+function openPricingModal(id){
+  const rule = id ? state.pricingRules.find(r=>r.id===id) : null;
+  const v = rule || { tonnage:'', firstHour:'', perHour:'', dailyCap:'', overtimeStart:'', overtimeEnd:'', overtimeRate:'' };
+  const html = ''
+  + '<div class="modal-overlay open" id="pricingModalOverlay">'
+  + '<div class="modal-panel" style="max-width:460px">'
+  + '<div class="modal-head"><h3>'+(rule?'編輯單價設定':'新增單價設定')+'</h3><button class="icon-btn gray" data-action="close-modal">'+ICONS.close+'</button></div>'
+  + '<div class="modal-body"><form id="pricingForm">'
+  + '<input type="hidden" id="p_id" value="'+(rule?rule.id:'')+'">'
+  + '<div class="form-grid">'
+  + '<div class="field full"><label>噸數 <span class="req">*</span></label><input type="number" id="p_tonnage" step="0.1" min="0" required value="'+escapeHtml(v.tonnage)+'" placeholder="例如 25"></div>'
+  + '<div class="field"><label>第1小時金額 <span class="req">*</span></label><input type="number" id="p_firstHour" step="1" min="0" required value="'+escapeHtml(v.firstHour)+'" placeholder="例如 4000"></div>'
+  + '<div class="field"><label>每加1小時 <span class="req">*</span></label><input type="number" id="p_perHour" step="1" min="0" required value="'+escapeHtml(v.perHour)+'" placeholder="例如 2000"></div>'
+  + '<div class="field full"><label>一天最高金額（上限） <span class="req">*</span></label><input type="number" id="p_dailyCap" step="1" min="0" required value="'+escapeHtml(v.dailyCap)+'" placeholder="例如 13000"></div>'
+  + '<div class="field full"><label>加班時間（選填）</label><div class="time-range-row"><input type="time" step="1800" id="p_overtimeStart" value="'+escapeHtml(v.overtimeStart||'')+'"><span class="time-sep">至</span><input type="time" step="1800" id="p_overtimeEnd" value="'+escapeHtml(v.overtimeEnd||'')+'"></div>'
+  + '<div class="field-hint">不論這裡是否填寫，當天總工時超過8小時的部分一律算加班；這裡可以另外加一條「幾點以後也算加班」的規則（例如17:00），只填開始不填結束代表之後都算加班</div></div>'
+  + '<div class="field full"><label>加班每小時加價</label><input type="number" id="p_overtimeRate" step="1" min="0" value="'+escapeHtml(v.overtimeRate)+'" placeholder="例如 2500"></div>'
+  + '</div></form></div>'
+  + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
+  + '<button class="btn btn-primary" data-action="save-pricing">'+(rule?'儲存變更':'新增設定')+'</button></div>'
+  + '</div></div>';
+  document.getElementById('modalRoot').innerHTML = html;
+}
+
+function savePricingRuleFromModal(){
+  const form = document.getElementById('pricingForm');
+  if(!form.reportValidity()) return;
+  const id = document.getElementById('p_id').value || uid();
+  const isNew = !document.getElementById('p_id').value;
+  const tonnage = document.getElementById('p_tonnage').value;
+
+  function doSave(){
+    const dup = state.pricingRules.find(r => String(r.tonnage)===String(tonnage) && r.id!==id);
+    if(dup) state.pricingRules = state.pricingRules.filter(r=>r.id!==dup.id);
+    const record = {
+      id, tonnage,
+      firstHour: document.getElementById('p_firstHour').value,
+      perHour: document.getElementById('p_perHour').value,
+      dailyCap: document.getElementById('p_dailyCap').value,
+      overtimeStart: document.getElementById('p_overtimeStart').value || '',
+      overtimeEnd: document.getElementById('p_overtimeEnd').value || '',
+      overtimeRate: document.getElementById('p_overtimeRate').value || 0
+    };
+    if(isNew){
+      state.pricingRules.push(record);
+    } else {
+      const idx = state.pricingRules.findIndex(r=>r.id===id);
+      if(idx>=0) state.pricingRules[idx] = record; else state.pricingRules.push(record);
+    }
+    savePricing();
+    closeModal();
+    render();
+    showToast(isNew ? '已新增單價設定' : '已儲存變更');
+  }
+
+  const dupCheck = state.pricingRules.find(r => String(r.tonnage)===String(tonnage) && r.id!==id);
+  if(dupCheck){
+    showConfirmModal('已經有 '+tonnage+' 噸的單價設定了，要覆蓋原本的設定嗎？', doSave, { okLabel:'覆蓋設定' });
+  } else {
+    doSave();
+  }
+}
+
+function deletePricingRule(id){
+  const r = state.pricingRules.find(x=>x.id===id);
+  if(!r) return;
+  showConfirmModal('確定要刪除 '+r.tonnage+' 噸的單價設定嗎？', function(){
+    state.pricingRules = state.pricingRules.filter(x=>x.id!==id);
+    savePricing();
+    render();
+    showToast('已刪除單價設定');
+  }, { danger:true, okLabel:'刪除' });
+}
+
+/* ============================================================
+   MODAL: SPECIAL CLIENT PRICING (客戶＋噸數專屬報價)
+============================================================ */
+function openSpecialPricingModal(id){
+  const rule = id ? state.specialPricing.find(r=>r.id===id) : null;
+  const v = rule || { clientName:'', tonnage:'', firstHour:'', perHour:'', dailyCap:'', overtimeStart:'', overtimeEnd:'', overtimeRate:'' };
+  const clientNames = activeClients().map(c=>c.name);
+  const html = ''
+  + '<div class="modal-overlay open" id="specialPricingModalOverlay">'
+  + '<div class="modal-panel" style="max-width:460px">'
+  + '<div class="modal-head"><h3>'+(rule?'編輯特殊客戶報價':'新增特殊客戶報價')+'</h3><button class="icon-btn gray" data-action="close-modal">'+ICONS.close+'</button></div>'
+  + '<div class="modal-body"><form id="specialPricingForm">'
+  + '<input type="hidden" id="sp_id" value="'+(rule?rule.id:'')+'">'
+  + '<div class="form-grid">'
+  + '<div class="field full"><label>客戶名稱 <span class="req">*</span></label><input type="text" id="sp_clientName" list="specialClientList" required value="'+escapeHtml(v.clientName)+'" placeholder="需與訂單上的客戶名稱完全相同"></div>'
+  + '<datalist id="specialClientList">'+clientNames.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
+  + '<div class="field full"><label>噸數 <span class="req">*</span></label><input type="number" id="sp_tonnage" step="0.1" min="0" required value="'+escapeHtml(v.tonnage)+'" placeholder="例如 25"></div>'
+  + '<div class="field"><label>第1小時金額 <span class="req">*</span></label><input type="number" id="sp_firstHour" step="1" min="0" required value="'+escapeHtml(v.firstHour)+'" placeholder="例如 4000"></div>'
+  + '<div class="field"><label>每加1小時 <span class="req">*</span></label><input type="number" id="sp_perHour" step="1" min="0" required value="'+escapeHtml(v.perHour)+'" placeholder="例如 2000"></div>'
+  + '<div class="field full"><label>一天最高金額（上限） <span class="req">*</span></label><input type="number" id="sp_dailyCap" step="1" min="0" required value="'+escapeHtml(v.dailyCap)+'" placeholder="例如 13000"></div>'
+  + '<div class="field full"><label>加班時間（選填）</label><div class="time-range-row"><input type="time" step="1800" id="sp_overtimeStart" value="'+escapeHtml(v.overtimeStart||'')+'"><span class="time-sep">至</span><input type="time" step="1800" id="sp_overtimeEnd" value="'+escapeHtml(v.overtimeEnd||'')+'"></div>'
+  + '<div class="field-hint">不論這裡是否填寫，當天總工時超過8小時的部分一律算加班；這裡可以另外加一條「幾點以後也算加班」的規則（例如17:00），只填開始不填結束代表之後都算加班</div></div>'
+  + '<div class="field full"><label>加班每小時加價</label><input type="number" id="sp_overtimeRate" step="1" min="0" value="'+escapeHtml(v.overtimeRate)+'" placeholder="例如 2500"></div>'
+  + '</div></form></div>'
+  + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
+  + '<button class="btn btn-primary" data-action="save-special-pricing">'+(rule?'儲存變更':'新增設定')+'</button></div>'
+  + '</div></div>';
+  document.getElementById('modalRoot').innerHTML = html;
+}
+
+function saveSpecialPricingFromModal(){
+  const form = document.getElementById('specialPricingForm');
+  if(!form.reportValidity()) return;
+  const id = document.getElementById('sp_id').value || uid();
+  const isNew = !document.getElementById('sp_id').value;
+  const clientName = document.getElementById('sp_clientName').value.trim();
+  const tonnage = document.getElementById('sp_tonnage').value;
+
+  function doSave(){
+    const dup = state.specialPricing.find(r => (r.clientName||'').trim()===clientName && String(r.tonnage)===String(tonnage) && r.id!==id);
+    if(dup) state.specialPricing = state.specialPricing.filter(r=>r.id!==dup.id);
+    const record = {
+      id, clientName, tonnage,
+      firstHour: document.getElementById('sp_firstHour').value,
+      perHour: document.getElementById('sp_perHour').value,
+      dailyCap: document.getElementById('sp_dailyCap').value,
+      overtimeStart: document.getElementById('sp_overtimeStart').value || '',
+      overtimeEnd: document.getElementById('sp_overtimeEnd').value || '',
+      overtimeRate: document.getElementById('sp_overtimeRate').value || 0
+    };
+    if(isNew){
+      state.specialPricing.push(record);
+    } else {
+      const idx = state.specialPricing.findIndex(r=>r.id===id);
+      if(idx>=0) state.specialPricing[idx] = record; else state.specialPricing.push(record);
+    }
+    saveSpecialPricing();
+    closeModal();
+    render();
+    showToast(isNew ? '已新增特殊客戶報價' : '已儲存變更');
+  }
+
+  const dupCheck = state.specialPricing.find(r => (r.clientName||'').trim()===clientName && String(r.tonnage)===String(tonnage) && r.id!==id);
+  if(dupCheck){
+    showConfirmModal('「'+clientName+'」的 '+tonnage+' 噸已經有專屬報價了，要覆蓋原本的設定嗎？', doSave, { okLabel:'覆蓋設定' });
+  } else {
+    doSave();
+  }
+}
+
+function deleteSpecialPricingRule(id){
+  const r = state.specialPricing.find(x=>x.id===id);
+  if(!r) return;
+  showConfirmModal('確定要刪除「'+r.clientName+'」'+r.tonnage+' 噸的專屬報價嗎？', function(){
+    state.specialPricing = state.specialPricing.filter(x=>x.id!==id);
+    saveSpecialPricing();
+    render();
+    showToast('已刪除特殊客戶報價');
+  }, { danger:true, okLabel:'刪除' });
+}
+
+/* ============================================================
+   MODAL: VENDOR FIXED RATE (外調車行固定收費)
+============================================================ */
+function openVendorRateModal(id){
+  const rule = id ? state.vendorRates.find(r=>r.id===id) : null;
+  const v = rule || { vendorName:'', rate:'' };
+  const vendorNames = Array.from(new Set(activeClients().filter(c=>c.type==='peer').map(c=>c.name).concat(state.orders.map(o=>o.externalVendor)).filter(Boolean)));
+  const html = ''
+  + '<div class="modal-overlay open" id="vendorRateModalOverlay">'
+  + '<div class="modal-panel" style="max-width:420px">'
+  + '<div class="modal-head"><h3>'+(rule?'編輯固定收費':'新增固定收費')+'</h3><button class="icon-btn gray" data-action="close-modal">'+ICONS.close+'</button></div>'
+  + '<div class="modal-body"><form id="vendorRateForm">'
+  + '<input type="hidden" id="vr_id" value="'+(rule?rule.id:'')+'">'
+  + '<div class="form-grid">'
+  + '<div class="field full"><label>外調車行／同行名稱 <span class="req">*</span></label><input type="text" id="vr_vendorName" list="vrVendorList" required value="'+escapeHtml(v.vendorName)+'" placeholder="需與訂單上的外調對象完全相同"></div>'
+  + '<datalist id="vrVendorList">'+vendorNames.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
+  + '<div class="field full"><label>固定收費金額 <span class="req">*</span></label><input type="number" id="vr_rate" step="1" min="0" required value="'+escapeHtml(v.rate)+'" placeholder="NT$"></div>'
+  + '</div></form></div>'
+  + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
+  + '<button class="btn btn-primary" data-action="save-vendor-rate">'+(rule?'儲存變更':'新增設定')+'</button></div>'
+  + '</div></div>';
+  document.getElementById('modalRoot').innerHTML = html;
+}
+
+function saveVendorRateFromModal(){
+  const form = document.getElementById('vendorRateForm');
+  if(!form.reportValidity()) return;
+  const id = document.getElementById('vr_id').value || uid();
+  const isNew = !document.getElementById('vr_id').value;
+  const vendorName = document.getElementById('vr_vendorName').value.trim();
+  const rate = document.getElementById('vr_rate').value;
+
+  function doSave(){
+    const dup = state.vendorRates.find(r => (r.vendorName||'').trim()===vendorName && r.id!==id);
+    if(dup) state.vendorRates = state.vendorRates.filter(r=>r.id!==dup.id);
+    const record = { id, vendorName, rate };
+    if(isNew){
+      state.vendorRates.push(record);
+    } else {
+      const idx = state.vendorRates.findIndex(r=>r.id===id);
+      if(idx>=0) state.vendorRates[idx] = record; else state.vendorRates.push(record);
+    }
+    saveVendorRates();
+    closeModal();
+    render();
+    showToast(isNew ? '已新增固定收費' : '已儲存變更');
+  }
+
+  const dupCheck = state.vendorRates.find(r => (r.vendorName||'').trim()===vendorName && r.id!==id);
+  if(dupCheck){
+    showConfirmModal('「'+vendorName+'」已經有設定過固定收費了，要覆蓋原本的設定嗎？', doSave, { okLabel:'覆蓋設定' });
+  } else {
+    doSave();
+  }
+}
+
+function deleteVendorRate(id){
+  const r = state.vendorRates.find(x=>x.id===id);
+  if(!r) return;
+  showConfirmModal('確定要刪除「'+r.vendorName+'」的固定收費設定嗎？', function(){
+    state.vendorRates = state.vendorRates.filter(x=>x.id!==id);
+    saveVendorRates();
+    render();
+    showToast('已刪除固定收費設定');
+  }, { danger:true, okLabel:'刪除' });
+}
+
+/* ============================================================
+   MODAL: EXPENSE
+============================================================ */
+function openExpenseModal(id){
+  const expense = id ? state.expenses.find(x=>x.id===id) : null;
+  const v = expense || { date: todayStr(), licensePlate:'', amount:'', category:'', note:'' };
+  const plateOptions = Array.from(new Set(
+    state.orders.map(o=>o.vehicleNo).concat(state.expenses.map(x=>x.licensePlate)).filter(Boolean)
+  ));
+  const categoryOptions = Array.from(new Set(state.expenses.map(x=>x.category).filter(Boolean)));
+
+  const html = ''
+  + '<div class="modal-overlay open" id="expenseModalOverlay">'
+  + '<div class="modal-panel" style="max-width:460px">'
+  + '<div class="modal-head"><h3>'+(expense?'編輯支出':'新增支出')+'</h3><button class="icon-btn gray" data-action="close-modal">'+ICONS.close+'</button></div>'
+  + '<div class="modal-body"><form id="expenseForm">'
+  + '<input type="hidden" id="e_id" value="'+(expense?expense.id:'')+'">'
+  + '<div class="form-grid">'
+  + '<div class="field"><label>日期 <span class="req">*</span></label><input type="date" id="e_date" required value="'+escapeHtml(v.date)+'"></div>'
+  + '<div class="field"><label>車牌 <span class="req">*</span></label><input type="text" id="e_licensePlate" list="plateList" required value="'+escapeHtml(v.licensePlate)+'" placeholder="例如 ABC-1234"></div>'
+  + '<datalist id="plateList">'+plateOptions.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
+  + '<div class="field"><label>金額 <span class="req">*</span></label><input type="number" id="e_amount" step="1" min="0" required value="'+escapeHtml(v.amount)+'" placeholder="NT$"></div>'
+  + '<div class="field"><label>項目</label><input type="text" id="e_category" list="categoryList" value="'+escapeHtml(v.category)+'" placeholder="例如：油錢、保養、過路費"></div>'
+  + '<datalist id="categoryList">'+categoryOptions.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'<option value="油錢"><option value="保養"><option value="過路費"><option value="罰單"><option value="其他"></datalist>'
+  + '<div class="field full"><label>備註</label><textarea id="e_note" placeholder="選填">'+escapeHtml(v.note||'')+'</textarea></div>'
+  + '</div></form></div>'
+  + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
+  + '<button class="btn btn-primary" data-action="save-expense">'+(expense?'儲存變更':'新增支出')+'</button></div>'
+  + '</div></div>';
+  document.getElementById('modalRoot').innerHTML = html;
+}
+
+function saveExpenseFromModal(){
+  const form = document.getElementById('expenseForm');
+  if(!form.reportValidity()) return;
+  const id = document.getElementById('e_id').value || uid();
+  const isNew = !document.getElementById('e_id').value;
+  const record = {
+    id,
+    date: document.getElementById('e_date').value,
+    licensePlate: document.getElementById('e_licensePlate').value.trim(),
+    amount: document.getElementById('e_amount').value,
+    category: document.getElementById('e_category').value.trim(),
+    note: document.getElementById('e_note').value.trim()
+  };
+  if(isNew){
+    record.createdAt = Date.now();
+    state.expenses.push(record);
+  } else {
+    const idx = state.expenses.findIndex(x=>x.id===id);
+    record.createdAt = state.expenses[idx].createdAt;
+    state.expenses[idx] = record;
+  }
+  saveExpenses();
+  closeModal();
+  render();
+  showToast(isNew ? '已新增支出' : '已儲存變更');
+}
+
+function deleteExpense(id){
+  const x = state.expenses.find(e=>e.id===id);
+  if(!x) return;
+  showConfirmModal('確定要刪除「'+(x.licensePlate||'')+'」'+fmtDate(x.date)+'的這筆支出嗎？', function(){
+    state.expenses = state.expenses.filter(e=>e.id!==id);
+    saveExpenses();
+    render();
+    showToast('已刪除支出');
+  }, { danger:true, okLabel:'刪除' });
+}
+
+/* ============================================================
+   MODAL: INVOICE / 請款單
+============================================================ */
+function openInvoiceModal(){
+  const m = state.statsMonth;
+  const monthOrders = ordersInMonth(m);
+  const clientNames = Array.from(new Set(monthOrders.map(o=>o.clientName.trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  const allClientNames = activeClients().map(c=>c.name);
+  const options = clientNames.length ? clientNames : allClientNames;
+  const defaultClient = options.length ? options[0] : '';
+
+  const html = ''
+  + '<div class="modal-overlay open" id="invoiceModalOverlay">'
+  + '<div class="modal-panel" style="max-width:420px">'
+  + '<div class="modal-head"><h3>開立請款單</h3><button class="icon-btn gray" data-action="close-modal">'+ICONS.close+'</button></div>'
+  + '<div class="modal-body"><form id="invoiceForm">'
+  + '<div class="form-grid">'
+  + '<div class="field full"><label>客戶 <span class="req">*</span></label><select id="inv_clientName" required>'
+    + (options.length ? options.map(n=>'<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>').join('') : '<option value="">目前這個月份沒有訂單</option>')
+  + '</select></div>'
+  + '<div class="field full"><label>月份</label><input type="month" id="inv_month" value="'+m+'"></div>'
+  + '<div class="field full"><label>發票編號</label><input type="text" id="inv_invoiceNo" value="'+escapeHtml(getInvoiceNumber(defaultClient, m))+'" placeholder="選填，例如 AB12345678">'
+  + '<div class="field-hint">依「這個客戶＋這個月份」記住，下次開同一組請款單會自動帶出</div></div>'
+  + '</div></form></div>'
+  + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
+  + '<button class="btn btn-secondary" data-action="print-envelope-from-invoice-modal">'+ICONS.envelope+'列印信封</button>'
+  + '<button class="btn btn-primary" data-action="generate-invoice">產生請款單</button></div>'
+  + '</div></div>';
+  document.getElementById('modalRoot').innerHTML = html;
+  bindInvoiceModalEvents();
+}
+
+function bindInvoiceModalEvents(){
+  const clientEl = document.getElementById('inv_clientName');
+  const monthEl = document.getElementById('inv_month');
+  const invoiceNoEl = document.getElementById('inv_invoiceNo');
+  function syncInvoiceNo(){
+    invoiceNoEl.value = getInvoiceNumber(clientEl.value, monthEl.value);
+  }
+  clientEl.addEventListener('change', syncInvoiceNo);
+  monthEl.addEventListener('change', syncInvoiceNo);
+}
+
+const TAX_RATE = 0.05;
+
+function generateInvoiceFromModal(){
+  const clientName = document.getElementById('inv_clientName').value;
+  const month = document.getElementById('inv_month').value;
+  const invoiceNo = document.getElementById('inv_invoiceNo').value.trim();
+  if(!clientName){ alert('請先選擇客戶'); return; }
+  setInvoiceNumber(clientName, month, invoiceNo);
+  clearEnvelopePageStyle();
+  const html = buildInvoiceHtml(clientName, month);
+  closeModal();
+  const view = document.getElementById('invoiceView');
+  view.innerHTML = html;
+  view.classList.add('open');
+  view.scrollTop = 0;
+}
+
+function closeInvoiceView(){
+  const view = document.getElementById('invoiceView');
+  view.classList.remove('open');
+  view.innerHTML = '';
+}
+
+/* ============================================================
+   ENVELOPE PRINTING
+============================================================ */
+function setEnvelopePageStyle(pageWidthCm, pageHeightCm){
+  let styleEl = document.getElementById('envelopePageStyleTag');
+  if(!styleEl){
+    styleEl = document.createElement('style');
+    styleEl.id = 'envelopePageStyleTag';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = '@page{ size: '+pageWidthCm+'cm '+pageHeightCm+'cm; margin:0; }';
+}
+function clearEnvelopePageStyle(){
+  const styleEl = document.getElementById('envelopePageStyleTag');
+  if(styleEl) styleEl.remove();
+}
+
+function buildEnvelopeHtml(clientName){
+  const co = state.companyInfo || {};
+  const client = findClientByName(clientName) || {};
+  const es = state.envelopeSettings || { orientation:'horizontal', length:22.9, width:10.5 };
+  const orientation = es.orientation === 'vertical' ? 'vertical' : 'horizontal';
+  const lengthCm = Number(es.length) || 22.9;
+  const widthCm = Number(es.width) || 10.5;
+  const pageWidth = orientation === 'vertical' ? widthCm : lengthCm;
+  const pageHeight = orientation === 'vertical' ? lengthCm : widthCm;
+
+  setEnvelopePageStyle(pageWidth, pageHeight);
+
+  let recipientStyle, senderStyle;
+  if(orientation === 'vertical'){
+    // 直式：收件人置中偏右，寄件人左下角
+    recipientStyle = 'top:42%; left:52%; width:44%; transform:translateY(-50%); font-size:4.2mm;';
+    senderStyle = 'bottom:6%; left:6%; width:60%; font-size:3mm;';
+  } else {
+    // 橫式：收件人置中偏右上，寄件人左上角
+    recipientStyle = 'top:30%; left:52%; width:44%; font-size:4.2mm;';
+    senderStyle = 'top:6%; left:6%; width:55%; font-size:3mm;';
+  }
+
+  const recipientAddress = client.address || '（尚未在客戶管理設定地址）';
+  const senderLines = [co.name, co.address, co.phone].filter(Boolean);
+
+  return '<div class="envelope-toolbar">'
+    + '<button class="btn btn-primary btn-sm" onclick="window.print()">'+ICONS.print+'列印</button>'
+    + '<button class="btn btn-secondary btn-sm" data-action="close-envelope-view">'+ICONS.close+'關閉</button>'
+    + '</div>'
+    + '<div class="envelope-canvas" style="width:'+pageWidth+'cm; height:'+pageHeight+'cm;">'
+      + '<div class="envelope-recipient" style="'+recipientStyle+'">'
+        + '<div>'+escapeHtml(recipientAddress)+'</div>'
+        + '<div class="name" style="margin-top:6px; font-size:1.3em;">'+escapeHtml(clientName)+' 收</div>'
+      + '</div>'
+      + '<div class="envelope-sender" style="'+senderStyle+'">'
+        + senderLines.map(l=>'<div>'+escapeHtml(l)+'</div>').join('')
+      + '</div>'
+    + '</div>';
+}
+
+function openEnvelopePrint(clientName){
+  if(!clientName){ alert('請先選擇客戶'); return; }
+  closeModal();
+  const html = buildEnvelopeHtml(clientName);
+  const view = document.getElementById('envelopeView');
+  view.innerHTML = html;
+  view.classList.add('open');
+  view.scrollTop = 0;
+}
+
+function closeEnvelopeView(){
+  const view = document.getElementById('envelopeView');
+  view.classList.remove('open');
+  view.innerHTML = '';
+  clearEnvelopePageStyle();
+}
+
+function buildInvoiceHtml(clientName, month){
+  const co = state.companyInfo || {};
+  const client = findClientByName(clientName) || {};
+  const invoiceNo = getInvoiceNumber(clientName, month);
+  const orders = ordersInMonth(month)
+    .filter(o => o.clientName.trim()===clientName.trim())
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+
+  let includedTotal = 0, addedBaseTotal = 0, exemptTotal = 0;
+  orders.forEach(o=>{
+    const amt = Number(o.amount||0);
+    if(o.taxType==='added') addedBaseTotal += amt;
+    else if(o.taxType==='exempt') exemptTotal += amt;
+    else includedTotal += amt;
+  });
+  const taxAmount = Math.round(addedBaseTotal * TAX_RATE);
+  const addedTotalWithTax = addedBaseTotal + taxAmount;
+  const grandTotal = includedTotal + addedTotalWithTax + exemptTotal;
+
+  const rows = orders.map(o=>(
+    '<tr>'
+    + '<td>'+escapeHtml(fmtDate(o.date))+'</td>'
+    + '<td>'+escapeHtml(o.docketNo||'')+'</td>'
+    + '<td>'+escapeHtml(o.workContent||'')+'</td>'
+    + '<td>'+escapeHtml(o.location||'')+'</td>'
+    + '<td class="num">'+escapeHtml(taxTypeLabel(o.taxType))+'</td>'
+    + '<td class="num">'+fmtMoney(o.amount)+'</td>'
+    + '</tr>'
+  )).join('');
+
+  return '<div class="invoice-toolbar">'
+    + '<button class="btn btn-primary btn-sm" onclick="window.print()">'+ICONS.download+'列印／另存為 PDF</button>'
+    + '<button class="btn btn-secondary btn-sm" data-action="close-invoice-view">'+ICONS.close+'關閉</button>'
+    + '</div>'
+    + '<div class="invoice-doc">'
+    + '<h1>請 款 單</h1>'
+    + '<div class="invoice-head-row">'
+      + '<div class="box"><div><span class="lab">請款廠商：</span>'+escapeHtml(co.name||'（尚未設定公司資料）')+'</div>'
+      + '<div><span class="lab">統一編號：</span>'+escapeHtml(co.taxId||'—')+'</div>'
+      + '<div><span class="lab">地址：</span>'+escapeHtml(co.address||'—')+'</div>'
+      + '<div><span class="lab">電話：</span>'+escapeHtml(co.phone||'—')+'</div></div>'
+      + '<div class="box"><div><span class="lab">請款對象：</span>'+escapeHtml(clientName)+'</div>'
+      + '<div><span class="lab">統一編號：</span>'+escapeHtml(client.taxId||'—')+'</div>'
+      + '<div><span class="lab">地址：</span>'+escapeHtml(client.address||'—')+'</div>'
+      + '<div><span class="lab">請款月份：</span>'+escapeHtml(monthLabel(month))+'</div>'
+      + '<div><span class="lab">發票編號：</span>'+escapeHtml(invoiceNo||'—')+'</div></div>'
+    + '</div>'
+    + '<table><thead><tr><th>日期</th><th>簽單編號</th><th>工作內容</th><th>工作地點</th><th class="num">稅別</th><th class="num">金額</th></tr></thead>'
+    + '<tbody>'+(rows || '<tr><td colspan="6" style="text-align:center; color:#9B9A97;">這個月份沒有這位客戶的訂單</td></tr>')+'</tbody></table>'
+    + '<div class="invoice-totals">'
+      + '<div><span>稅內含金額小計</span><span>'+fmtMoney(includedTotal)+'</span></div>'
+      + '<div><span>稅外加金額小計（未稅）</span><span>'+fmtMoney(addedBaseTotal)+'</span></div>'
+      + '<div><span>營業稅（5%）</span><span>'+fmtMoney(taxAmount)+'</span></div>'
+      + '<div><span>免稅金額小計</span><span>'+fmtMoney(exemptTotal)+'</span></div>'
+      + '<div class="grand"><span>應付總額</span><span>'+fmtMoney(grandTotal)+'</span></div>'
+    + '</div>'
+    + '</div>';
+}
+
+function closeModal(){
+  document.getElementById('modalRoot').innerHTML = '';
+  pendingConfirmCallback = null;
+}
+
+/* ============================================================
+   BACKUP / CSV EXPORT
+============================================================ */
+function downloadFile(filename, content, mime){
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function exportBackup(){
+  const payload = { version:9, exportedAt: new Date().toISOString(), orders: state.orders, clients: state.clients, pricingRules: state.pricingRules, specialPricing: state.specialPricing, vendorRates: state.vendorRates, expenses: state.expenses, companyInfo: state.companyInfo, crewList: state.crewList, vehicleList: state.vehicleList, invoiceNumbers: state.invoiceNumbers, envelopeSettings: state.envelopeSettings };
+  downloadFile('吊車請款備份_'+todayStr()+'.json', JSON.stringify(payload, null, 2), 'application/json');
+  showToast('已匯出備份檔案');
+}
+
+function importBackup(file){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    let data;
+    try{ data = JSON.parse(e.target.result); }catch(err){ alert('檔案格式錯誤，無法解析 JSON。'); return; }
+    if(!data || !Array.isArray(data.orders) || !Array.isArray(data.clients)){
+      alert('這不是有效的備份檔案（缺少 orders 或 clients 資料）。');
+      return;
+    }
+    showConfirmModal('匯入將會覆蓋目前瀏覽器中所有的訂單、客戶、單價設定與支出紀錄，確定要繼續嗎？', function(){
+      state.orders = data.orders;
+      state.clients = data.clients;
+      if(Array.isArray(data.pricingRules)) state.pricingRules = data.pricingRules;
+      if(Array.isArray(data.specialPricing)) state.specialPricing = data.specialPricing;
+      if(Array.isArray(data.vendorRates)) state.vendorRates = data.vendorRates;
+      if(Array.isArray(data.expenses)) state.expenses = data.expenses;
+      if(data.companyInfo && typeof data.companyInfo === 'object') state.companyInfo = data.companyInfo;
+      if(Array.isArray(data.crewList)) state.crewList = data.crewList;
+      if(Array.isArray(data.vehicleList)) state.vehicleList = data.vehicleList;
+      if(data.invoiceNumbers && typeof data.invoiceNumbers === 'object') state.invoiceNumbers = data.invoiceNumbers;
+      if(data.envelopeSettings && typeof data.envelopeSettings === 'object') state.envelopeSettings = data.envelopeSettings;
+      saveOrders(); saveClients(); savePricing(); saveSpecialPricing(); saveVendorRates(); saveExpenses(); saveCompanyInfo(); saveCrewList(); saveVehicleList(); saveInvoiceNumbers(); saveEnvelopeSettings();
+      render();
+      showToast('匯入完成，共 '+state.orders.length+' 筆訂單、'+state.clients.length+' 家客戶');
+    }, { danger:true, okLabel:'匯入並覆蓋' });
+  };
+  reader.readAsText(file);
+}
+
+function exportStatsCsv(){
+  const m = state.statsMonth;
+  const groupBy_dim = state.statsGroupBy === 'location' ? 'location' : 'client';
+  const list = ordersInMonth(m);
+  const expenses = expensesInMonth(m);
+
+  function groupBy(keyFn){
+    const map = {};
+    list.forEach(o=>{
+      const k = keyFn(o);
+      if(!map[k]) map[k] = { label:k, count:0, hours:0, amount:0 };
+      map[k].count++;
+      map[k].hours += Number(o.duration||0);
+      map[k].amount += Number(o.amount||0);
+    });
+    return Object.values(map).sort((a,b)=>b.amount-a.amount);
+  }
+  function buildVehicleRows(){
+    const map = {};
+    list.forEach(o=>{
+      const k = o.vehicleNo ? o.vehicleNo.trim() : '未填寫車號';
+      if(!map[k]) map[k] = { label:k, count:0, hours:0, income:0, expense:0 };
+      map[k].count++;
+      map[k].hours += Number(o.duration||0);
+      map[k].income += Number(o.amount||0);
+    });
+    expenses.forEach(x=>{
+      const k = x.licensePlate ? x.licensePlate.trim() : '未填寫車牌';
+      if(!map[k]) map[k] = { label:k, count:0, hours:0, income:0, expense:0 };
+      map[k].expense += Number(x.amount||0);
+    });
+    return Object.values(map).map(r=>Object.assign({}, r, { net: r.income - r.expense })).sort((a,b)=>b.net-a.net);
+  }
+
+  function receivableKey(o){
+    if(groupBy_dim === 'location') return o.location ? o.location.trim() : '未填寫工地';
+    return o.clientName.trim() || '未填寫客戶';
+  }
+  const customerRows = groupBy(o => (!isPeerClient(o.clientName)) ? receivableKey(o) : null).filter(r=>r.label);
+  const peerReceivableRows = groupBy(o => isPeerClient(o.clientName) ? receivableKey(o) : null).filter(r=>r.label);
+  function buildPeerPayableRows(){
+    const map = {};
+    list.forEach(o=>{
+      if(o.vehicleSource !== 'external' || !o.vendorCost || Number(o.vendorCost)<=0) return;
+      const k = o.externalVendor ? o.externalVendor.trim() : '未填寫外調對象';
+      if(!map[k]) map[k] = { label:k, count:0, hours:0, amount:0 };
+      map[k].count++;
+      map[k].hours += Number(o.duration||0);
+      map[k].amount += Number(o.vendorCost||0);
+    });
+    return Object.values(map).sort((a,b)=>b.amount-a.amount);
+  }
+  const peerPayableRows = buildPeerPayableRows();
+  const vehicleRows = buildVehicleRows();
+  const driverRows = groupBy(o => o.driver ? o.driver.trim() : '未填寫司機');
+
+  function section(title, colLabel, rows){
+    let s = '\n'+title+'\n'+colLabel+',筆數,總時長(小時),總金額\n';
+    rows.forEach(r=>{ s += [r.label, r.count, r.hours, r.amount].join(',') + '\n'; });
+    return s;
+  }
+
+  const dimLabel = groupBy_dim==='location' ? '工地' : '客戶名稱';
+  const customerTotal = customerRows.reduce((s,r)=>s+r.amount,0);
+  let csv = section('客戶應收明細（客戶要給我們）',dimLabel,customerRows).trim() + '\n合計,,,'+customerTotal+'\n';
+  csv += section('同行應收明細（同行要給我們）',dimLabel,peerReceivableRows);
+  csv += section('同行應付明細（我們要給同行）','同行名稱',peerPayableRows);
+
+  csv += '\n各車輛營業額（收入-支出=淨營業額）\n車牌,筆數,總時長(小時),收入,支出,淨營業額\n';
+  vehicleRows.forEach(r=>{ csv += [r.label, r.count, r.hours, r.income, r.expense, r.net].join(',') + '\n'; });
+
+  csv += section('各司機總營業額','司機',driverRows);
+
+  downloadFile('月結統計_'+m+'.csv', '\uFEFF'+csv, 'text/csv;charset=utf-8;');
+  showToast('已匯出 CSV');
+}
+
+function resetAll(){
+  showConfirmModal('確定要清空所有資料嗎？此動作無法復原，建議先匯出備份。', function(){
+    showConfirmModal('再次確認：這會刪除全部訂單、客戶與支出資料，真的要繼續嗎？', function(){
+      state.orders = [];
+      state.clients = [];
+      state.expenses = [];
+      saveOrders(); saveClients(); saveExpenses();
+      render();
+      showToast('已清空所有資料');
+    }, { danger:true, okLabel:'確定清空' });
+  }, { danger:true, okLabel:'繼續' });
+}
+
+/* ============================================================
+   EVENT DELEGATION
+============================================================ */
+document.addEventListener('click', function(e){
+  const navEl = e.target.closest('[data-nav]');
+  if(navEl){ navigate(navEl.getAttribute('data-nav')); return; }
+
+  const actionEl = e.target.closest('[data-action]');
+  if(!actionEl) return;
+  const action = actionEl.getAttribute('data-action');
+  const id = actionEl.getAttribute('data-id');
+
+  if(action === 'open-order-modal') openOrderModal(id||null);
+  else if(action === 'save-order') saveOrderFromModal();
+  else if(action === 'delete-order') deleteOrder(id);
+  else if(action === 'open-driver-report-modal') openDriverReportModal(id);
+  else if(action === 'save-driver-report') saveDriverReportFromModal();
+  else if(action === 'open-client-modal') openClientModal(id||null);
+  else if(action === 'save-client') saveClientFromModal();
+  else if(action === 'delete-client') deleteClient(id);
+  else if(action === 'open-pricing-modal') openPricingModal(id||null);
+  else if(action === 'save-pricing') savePricingRuleFromModal();
+  else if(action === 'delete-pricing') deletePricingRule(id);
+  else if(action === 'open-special-pricing-modal') openSpecialPricingModal(id||null);
+  else if(action === 'save-special-pricing') saveSpecialPricingFromModal();
+  else if(action === 'delete-special-pricing') deleteSpecialPricingRule(id);
+  else if(action === 'open-vendor-rate-modal') openVendorRateModal(id||null);
+  else if(action === 'save-vendor-rate') saveVendorRateFromModal();
+  else if(action === 'delete-vendor-rate') deleteVendorRate(id);
+  else if(action === 'save-company-info') saveCompanyInfoFromPage();
+  else if(action === 'save-envelope-settings') saveEnvelopeSettingsFromPage();
+  else if(action === 'print-envelope'){
+    const name = actionEl.getAttribute('data-name');
+    openEnvelopePrint(name);
+  }
+  else if(action === 'print-envelope-from-invoice-modal'){
+    const name = document.getElementById('inv_clientName').value;
+    openEnvelopePrint(name);
+  }
+  else if(action === 'close-envelope-view') closeEnvelopeView();
+  else if(action === 'add-crew-name') addCrewName();
+  else if(action === 'delete-crew-name') deleteCrewName(actionEl.getAttribute('data-name'));
+  else if(action === 'add-vehicle-plate') addVehiclePlate();
+  else if(action === 'delete-vehicle-plate') deleteVehiclePlate(actionEl.getAttribute('data-name'));
+  else if(action === 'open-expense-modal') openExpenseModal(id||null);
+  else if(action === 'save-expense') saveExpenseFromModal();
+  else if(action === 'delete-expense') deleteExpense(id);
+  else if(action === 'select-crew'){
+    state.scheduleFilters.name = actionEl.getAttribute('data-name');
+    render();
+  }
+  else if(action === 'filter-client-type'){
+    state.clientFilters.type = actionEl.getAttribute('data-type');
+    render();
+  }
+  else if(action === 'set-stats-groupby'){
+    state.statsGroupBy = actionEl.getAttribute('data-value');
+    render();
+  }
+  else if(action === 'toggle-vendor-settled'){
+    const o = state.orders.find(x=>x.id===id);
+    if(o){
+      o.vendorSettled = !o.vendorSettled;
+      o.vendorSettledAt = o.vendorSettled ? todayStr() : null;
+      saveOrders();
+      render();
+      showToast(o.vendorSettled ? '已標記為已付款' : '已改回未付款');
+    }
+  }
+  else if(action === 'copy-job-text'){
+    const o = state.orders.find(x=>x.id===id);
+    if(o) copyTextToClipboard(buildJobShareText(o), ()=>showToast('已複製工作內容，可貼到 LINE 傳給司機'));
+  }
+  else if(action === 'close-modal') closeModal();
+  else if(action === 'confirm-modal-ok'){
+    const cb = pendingConfirmCallback;
+    pendingConfirmCallback = null;
+    document.getElementById('modalRoot').innerHTML = '';
+    if(cb) cb();
+  }
+  else if(action === 'cancel-confirm-modal') closeModal();
+  else if(action === 'export-backup') exportBackup();
+  else if(action === 'import-backup') document.getElementById('importFileInput').click();
+  else if(action === 'reset-all') resetAll();
+  else if(action === 'export-stats-csv') exportStatsCsv();
+  else if(action === 'set-trash-type'){
+    state.trashFilters.type = actionEl.getAttribute('data-value');
+    render();
+  }
+  else if(action === 'restore-order') restoreOrder(id);
+  else if(action === 'purge-order') purgeOrder(id);
+  else if(action === 'restore-client') restoreClient(id);
+  else if(action === 'purge-client') purgeClient(id);
+  else if(action === 'open-invoice-modal') openInvoiceModal();
+  else if(action === 'generate-invoice') generateInvoiceFromModal();
+  else if(action === 'close-invoice-view') closeInvoiceView();
+});
+
+document.getElementById('modalRoot').addEventListener('click', function(e){
+  if(e.target.classList && e.target.classList.contains('modal-overlay')) closeModal();
+});
+
+document.addEventListener('input', function(e){
+  if(e.target.id === 'orderSearchInput'){
+    state.filters.search = e.target.value;
+    rerenderPreservingFocus();
+  } else if(e.target.id === 'clientSearchInput'){
+    state.clientFilters.search = e.target.value;
+    rerenderPreservingFocus();
+  } else if(e.target.id === 'expenseSearchInput'){
+    state.expenseFilters.search = e.target.value;
+    rerenderPreservingFocus();
+  }
+});
+
+document.addEventListener('change', function(e){
+  if(e.target.id === 'orderMonthSelect'){
+    state.filters.month = e.target.value;
+    render();
+  } else if(e.target.id === 'statsMonthInput'){
+    state.statsMonth = e.target.value || currentMonthStr();
+    render();
+  } else if(e.target.id === 'expenseMonthSelect'){
+    state.expenseFilters.month = e.target.value;
+    render();
+  } else if(e.target.id === 'showSettledToggle'){
+    state.receivablesFilters.showSettled = e.target.checked;
+    render();
+  } else if(e.target.id === 'importFileInput'){
+    const file = e.target.files[0];
+    if(file) importBackup(file);
+    e.target.value = '';
+  } else if(e.target.getAttribute && e.target.getAttribute('data-action')==='set-payment-status'){
+    const id = e.target.getAttribute('data-id');
+    const o = state.orders.find(x=>x.id===id);
+    if(o){
+      o.paymentStatus = e.target.value;
+      saveOrders();
+      render();
+      showToast('已更新金流狀態：'+paymentStatusLabel(o.paymentStatus));
+    }
+  }
+});
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    const overlay = document.querySelector('.modal-overlay.open');
+    if(overlay) closeModal();
+    const invView = document.getElementById('invoiceView');
+    if(invView && invView.classList.contains('open')) closeInvoiceView();
+    const envView = document.getElementById('envelopeView');
+    if(envView && envView.classList.contains('open')) closeEnvelopeView();
+  }
+  if(e.key === 'Enter'){
+    if(e.target.id === 'crewNameInput'){ e.preventDefault(); addCrewName(); }
+    else if(e.target.id === 'vehiclePlateInput'){ e.preventDefault(); addVehiclePlate(); }
+  }
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+renderNav();
+render();
+
+})();
+</script>
+</body>
+</html>
