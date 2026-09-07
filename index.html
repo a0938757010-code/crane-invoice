@@ -1933,6 +1933,9 @@ function splitBillableHours(amStart,amEnd,pmStart,pmEnd,startStr,endStr){
   const dailyThresholdMin = DAILY_NORMAL_HOURS * 60; // rule 1: hours beyond 8/day are overtime
   const timeThreshold = timeToMinutes(startStr); // rule 2: clock time after this is overtime (optional)
   const endThreshold = timeToMinutes(endStr);
+  // when endThreshold is at or before timeThreshold (e.g. 17:00 ~ 07:00), the overtime window
+  // wraps past midnight, so a clock-minute counts as OT if it's after start OR before end
+  const wrapsPastMidnight = timeThreshold!=null && endThreshold!=null && endThreshold <= timeThreshold;
   const timeUpperBound = endThreshold==null ? Infinity : endThreshold;
 
   let cumulative = 0; // minutes worked so far, before the current interval
@@ -1945,7 +1948,9 @@ function splitBillableHours(amStart,amEnd,pmStart,pmEnd,startStr,endStr){
       if(cumIndex < FIRST_HOUR_MINUTES) continue; // part of the flat first-hour fee, not rate-classified
       const clockMinute = s + offset;
       const isDailyOT = cumIndex >= dailyThresholdMin;
-      const isTimeOT = timeThreshold!=null && clockMinute >= timeThreshold && clockMinute < timeUpperBound;
+      const isTimeOT = timeThreshold!=null && (wrapsPastMidnight
+        ? (clockMinute >= timeThreshold || clockMinute < endThreshold)
+        : (clockMinute >= timeThreshold && clockMinute < timeUpperBound));
       if(isDailyOT || isTimeOT) extraOvertimeMinutes++;
       else extraNormalMinutes++;
     }
@@ -2252,7 +2257,7 @@ function openPricingModal(id){
   + '<div class="field"><label>每加1小時 <span class="req">*</span></label><input type="number" id="p_perHour" step="1" min="0" required value="'+escapeHtml(v.perHour)+'" placeholder="例如 2000"></div>'
   + '<div class="field full"><label>一天最高金額（上限） <span class="req">*</span></label><input type="number" id="p_dailyCap" step="1" min="0" required value="'+escapeHtml(v.dailyCap)+'" placeholder="例如 13000"></div>'
   + '<div class="field full"><label>加班時間（選填）</label><div class="time-range-row"><input type="time" step="1800" id="p_overtimeStart" value="'+escapeHtml(v.overtimeStart||'')+'"><span class="time-sep">至</span><input type="time" step="1800" id="p_overtimeEnd" value="'+escapeHtml(v.overtimeEnd||'')+'"></div>'
-  + '<div class="field-hint">不論這裡是否填寫，當天總工時超過8小時的部分一律算加班；這裡可以另外加一條「幾點以後也算加班」的規則（例如17:00），只填開始不填結束代表之後都算加班</div></div>'
+  + '<div class="field-hint">不論這裡是否填寫，當天總工時超過8小時的部分一律算加班；這裡可以另外加一條「幾點以後也算加班」的規則（例如17:00），只填開始不填結束代表之後都算加班；如果貴公司的規則是「晚上到隔天早上都算加班」，開始填17:00、結束填07:00即可（結束時間比開始時間早，代表跨過午夜）；沒有這種規則的話，兩個欄位都留空即可</div></div>'
   + '<div class="field full"><label>加班每小時加價</label><input type="number" id="p_overtimeRate" step="1" min="0" value="'+escapeHtml(v.overtimeRate)+'" placeholder="例如 2500"></div>'
   + '</div></form></div>'
   + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
@@ -2332,7 +2337,7 @@ function openSpecialPricingModal(id){
   + '<div class="field"><label>每加1小時 <span class="req">*</span></label><input type="number" id="sp_perHour" step="1" min="0" required value="'+escapeHtml(v.perHour)+'" placeholder="例如 2000"></div>'
   + '<div class="field full"><label>一天最高金額（上限） <span class="req">*</span></label><input type="number" id="sp_dailyCap" step="1" min="0" required value="'+escapeHtml(v.dailyCap)+'" placeholder="例如 13000"></div>'
   + '<div class="field full"><label>加班時間（選填）</label><div class="time-range-row"><input type="time" step="1800" id="sp_overtimeStart" value="'+escapeHtml(v.overtimeStart||'')+'"><span class="time-sep">至</span><input type="time" step="1800" id="sp_overtimeEnd" value="'+escapeHtml(v.overtimeEnd||'')+'"></div>'
-  + '<div class="field-hint">不論這裡是否填寫，當天總工時超過8小時的部分一律算加班；這裡可以另外加一條「幾點以後也算加班」的規則（例如17:00），只填開始不填結束代表之後都算加班</div></div>'
+  + '<div class="field-hint">不論這裡是否填寫，當天總工時超過8小時的部分一律算加班；這裡可以另外加一條「幾點以後也算加班」的規則（例如17:00），只填開始不填結束代表之後都算加班；如果貴公司的規則是「晚上到隔天早上都算加班」，開始填17:00、結束填07:00即可（結束時間比開始時間早，代表跨過午夜）；沒有這種規則的話，兩個欄位都留空即可</div></div>'
   + '<div class="field full"><label>加班每小時加價</label><input type="number" id="sp_overtimeRate" step="1" min="0" value="'+escapeHtml(v.overtimeRate)+'" placeholder="例如 2500"></div>'
   + '</div></form></div>'
   + '<div class="modal-foot"><button class="btn btn-secondary" data-action="close-modal">取消</button>'
