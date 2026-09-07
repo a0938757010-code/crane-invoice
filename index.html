@@ -707,15 +707,16 @@ function suggestAmount(clientName, tonnage, excludeId){
   return { amount: candidates[0].amount, exact:false };
 }
 
-function upsertClientFromOrder(name, taxId, address){
+function upsertClientFromOrder(name, taxId, address, phone){
   name = (name||'').trim();
   if(!name) return;
   let c = findClientByName(name);
   if(c){
     if(taxId && !c.taxId) c.taxId = taxId;
     if(address && !c.address) c.address = address;
+    if(phone && !c.phone) c.phone = phone;
   } else {
-    state.clients.push({ id: uid(), name, taxId: taxId||'', address: address||'', phone:'', type:'client', note:'', createdAt: Date.now() });
+    state.clients.push({ id: uid(), name, taxId: taxId||'', address: address||'', phone: phone||'', type:'client', note:'', createdAt: Date.now() });
   }
   saveClients();
 }
@@ -882,7 +883,7 @@ function renderClientsPage(){
   let list = activeClients();
   if(typeFilter !== 'all') list = list.filter(c => (c.type||'client') === typeFilter);
   const q = state.clientFilters.search.trim().toLowerCase();
-  if(q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.taxId||'').includes(q));
+  if(q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.taxId||'').includes(q) || (c.phone||'').includes(q));
   list.sort((a,b)=> a.name.localeCompare(b.name, 'zh-Hant'));
 
   const clientCount = activeClients().filter(c=>(c.type||'client')==='client').length;
@@ -898,7 +899,7 @@ function renderClientsPage(){
   html += '<button class="chip'+(typeFilter==='peer'?' active':'')+'" data-action="filter-client-type" data-type="peer">同行</button>';
   html += '</div>';
 
-  html += '<div class="filter-bar"><div class="input-search">'+ICONS.search+'<input type="text" id="clientSearchInput" placeholder="搜尋客戶名稱或統編" value="'+escapeHtml(state.clientFilters.search)+'"></div></div>';
+  html += '<div class="filter-bar"><div class="input-search">'+ICONS.search+'<input type="text" id="clientSearchInput" placeholder="搜尋客戶名稱、統編或電話" value="'+escapeHtml(state.clientFilters.search)+'"></div></div>';
 
   if(!list.length){
     html += emptyState(ICONS.clients, activeClients().length ? '找不到符合條件的客戶' : '尚未建立任何客戶資料',
@@ -1361,6 +1362,7 @@ function renderStatsPage(){
   let html = '';
   html += '<div class="page-head"><div><h1>月結統計 / 對帳單</h1><div class="sub">用於月底結算各客戶應收帳款</div></div>';
   html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">'
+    + '<button class="btn btn-primary" data-action="open-order-modal">'+ICONS.plus+'新增訂單</button>'
     + '<input type="month" class="input" id="statsMonthInput" value="'+m+'">'
     + '<button class="btn btn-secondary" data-action="open-invoice-modal">'+ICONS.download+'開立請款單</button>'
     + '<button class="btn btn-secondary" data-action="export-stats-csv">'+ICONS.download+'匯出 CSV</button>'
@@ -1769,7 +1771,7 @@ function openOrderModal(id){
   const assistantOptions = Array.from(new Set(state.crewList.concat(order&&order.assistant?[order.assistant]:[])));
   const vendorOptions = Array.from(new Set(state.vendorRates.map(v=>v.vendorName).concat(state.orders.map(o=>o.externalVendor)).filter(Boolean)));
 
-  const v = order || { clientName:'', clientTaxId:'', date: todayStr(), amStart:'', amEnd:'', pmStart:'', pmEnd:'', location:'', duration:'', amount:'', workContent:'', tonnage:'', docketNo:'', vehicleNo:'', driver:'', assistant:'', vehicleSource:'own', externalVendor:'', vendorCost:'', paymentStatus:'unbilled', taxType:'included', note:'' };
+  const v = order || { clientName:'', clientTaxId:'', clientPhone:'', date: todayStr(), amStart:'', amEnd:'', pmStart:'', pmEnd:'', location:'', duration:'', amount:'', workContent:'', tonnage:'', docketNo:'', vehicleNo:'', driver:'', assistant:'', vehicleSource:'own', externalVendor:'', vendorCost:'', paymentStatus:'unbilled', taxType:'included', note:'' };
 
   const html = ''
   + '<div class="modal-overlay open" id="orderModalOverlay">'
@@ -1786,6 +1788,7 @@ function openOrderModal(id){
   + '</div>'
 
   + '<div class="field"><label>客戶統編</label><input type="text" id="f_clientTaxId" maxlength="8" inputmode="numeric" value="'+escapeHtml(v.clientTaxId)+'" placeholder="8 碼統一編號（選填）"></div>'
+  + '<div class="field"><label>客戶電話</label><input type="text" id="f_clientPhone" value="'+escapeHtml(v.clientPhone||'')+'" placeholder="選填"></div>'
   + '<div class="field"><label>工作日期 <span class="req">*</span></label><input type="date" id="f_date" required value="'+escapeHtml(v.date)+'"></div>'
   + '<div class="field full"><label>簽單編號</label><input type="text" id="f_docketNo" value="'+escapeHtml(v.docketNo||'')+'" placeholder="選填"></div>'
 
@@ -1972,6 +1975,7 @@ function calcPricingSuggestion(rule, totalHours){
 function bindOrderModalEvents(excludeId, order){
   const nameEl = document.getElementById('f_clientName');
   const taxEl = document.getElementById('f_clientTaxId');
+  const phoneEl = document.getElementById('f_clientPhone');
   const tonEl = document.getElementById('f_tonnage');
   const amtEl = document.getElementById('f_amount');
   const hintEl = document.getElementById('amountHint');
@@ -2045,6 +2049,7 @@ function bindOrderModalEvents(excludeId, order){
     const c = findClientByName(nameEl.value);
     if(c){
       if(!taxEl.value) taxEl.value = c.taxId||'';
+      if(!phoneEl.value) phoneEl.value = c.phone||'';
     }
     calcAndFillAmount(false);
   }
@@ -2095,6 +2100,7 @@ function saveOrderFromModal(){
   const isNew = !document.getElementById('f_id').value;
   const clientName = document.getElementById('f_clientName').value.trim();
   const clientTaxId = document.getElementById('f_clientTaxId').value.trim();
+  const clientPhone = document.getElementById('f_clientPhone').value.trim();
   const date = document.getElementById('f_date').value;
   const docketNo = document.getElementById('f_docketNo').value.trim();
   const amStart = document.getElementById('f_amStart').value;
@@ -2117,7 +2123,7 @@ function saveOrderFromModal(){
   const note = document.getElementById('f_note').value.trim();
   const saveClient = document.getElementById('f_saveClient').checked;
 
-  const record = { id, clientName, clientTaxId, date, docketNo, amStart, amEnd, pmStart, pmEnd, location, duration, amount, workContent, tonnage, vehicleNo, driver, assistant, vehicleSource, externalVendor, vendorCost, paymentStatus, taxType, note };
+  const record = { id, clientName, clientTaxId, clientPhone, date, docketNo, amStart, amEnd, pmStart, pmEnd, location, duration, amount, workContent, tonnage, vehicleNo, driver, assistant, vehicleSource, externalVendor, vendorCost, paymentStatus, taxType, note };
 
   if(isNew){
     record.createdAt = Date.now();
@@ -2136,7 +2142,7 @@ function saveOrderFromModal(){
   }
   saveOrders();
 
-  if(saveClient) upsertClientFromOrder(clientName, clientTaxId, '');
+  if(saveClient) upsertClientFromOrder(clientName, clientTaxId, '', clientPhone);
 
   closeModal();
   render();
