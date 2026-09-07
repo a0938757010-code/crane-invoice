@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>司機工作回報</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+:root{
+  --pink:#C9938A; --soft-pink:#E8C4BC; --light-pink:#F5E6E3;
+  --blue:#7A9BAD; --light-blue:#E3EDF3;
+  --cream:#FAF3EE; --bg:#FAFAF8; --dark:#37352F; --medium:#5A5248; --gray:#9B9A97;
+  --radius-lg:18px; --radius:14px; --radius-sm:10px;
+  --shadow-sm:0 1px 3px rgba(55,53,47,0.06);
+  --border:1px solid rgba(55,53,47,0.09);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--dark);
+  font-family:'Noto Sans TC', -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+h1{margin:0; font-weight:700; font-size:20px;}
+p{margin:0;}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+
+.wrap{max-width:520px; margin:0 auto; padding:24px 16px 60px 16px;}
+.header{display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.brand-mark{
+  width:38px; height:38px; border-radius:11px; flex-shrink:0;
+  background:linear-gradient(135deg, var(--pink), var(--blue));
+  display:flex; align-items:center; justify-content:center;
+}
+.brand-mark svg{width:20px; height:20px; stroke:#fff;}
+.notice{
+  background:var(--light-blue); border-radius:var(--radius-sm); padding:12px 14px;
+  font-size:12.5px; color:var(--medium); line-height:1.6; margin-bottom:20px;
+}
+.card{background:#fff; border:var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); padding:20px;}
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+.field{margin-bottom:0;}
+.field.full{grid-column:1/-1;}
+.field label{display:block; font-size:12.5px; font-weight:700; color:var(--medium); margin-bottom:6px;}
+.field .req{color:var(--pink);}
+.field input, .field select, .field textarea{
+  width:100%; border:var(--border); border-radius:var(--radius-sm); background:var(--bg);
+  padding:10px 12px; font-size:14px; color:var(--dark); outline:none;
+}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--soft-pink); box-shadow:0 0 0 3px var(--light-pink); background:#fff;}
+.field textarea{resize:vertical; min-height:60px;}
+.time-range-row{display:flex; align-items:center; gap:8px;}
+.time-range-row select{flex:1; min-width:0;}
+.time-sep{color:var(--gray); font-size:13px; flex-shrink:0;}
+@media (max-width:480px){.form-grid{grid-template-columns:1fr;}}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  border:none; border-radius:var(--radius-sm); width:100%;
+  padding:13px 18px; font-size:15px; font-weight:700; margin-top:18px;
+}
+.btn-primary{background:var(--pink); color:#fff; box-shadow:0 3px 10px rgba(201,147,138,0.35);}
+.btn-primary:active{transform:scale(0.98);}
+
+.success-card{background:#fff; border:var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); padding:32px 20px; text-align:center;}
+.success-card h2{font-size:17px; margin-bottom:8px;}
+.success-card p{font-size:13.5px; color:var(--medium); line-height:1.6; margin-bottom:18px;}
+
+.footer-note{font-size:11px; color:var(--gray); line-height:1.7; margin-top:22px; text-align:center;}
+[hidden]{display:none!important;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h6M6 20V8l9-4v4M6 10h11a3 3 0 013 3v2h-4"/><path d="M16 15v5"/></svg></div>
+    <h1>司機工作回報</h1>
+  </div>
+
+  <div class="notice">這裡只能回報工作內容，送出後由會計核對確認，**不會顯示**公司營收、其他司機業績或客戶單價等資料。</div>
+
+  <div id="formCard" class="card">
+    <form id="reportForm">
+      <div class="form-grid">
+        <div class="field full"><label>客戶名稱 <span class="req">*</span></label><input type="text" id="r_clientName" required placeholder="輸入客戶名稱"></div>
+        <div class="field"><label>工作日期 <span class="req">*</span></label><input type="date" id="r_date" required></div>
+        <div class="field"><label>簽單編號</label><input type="text" id="r_docketNo" placeholder="選填"></div>
+
+        <div class="field full"><label>上午時段</label><div class="time-range-row" id="amRow"></div></div>
+        <div class="field full"><label>下午時段</label><div class="time-range-row" id="pmRow"></div></div>
+
+        <div class="field full"><label>工作地點</label><input type="text" id="r_location" placeholder="施工地點（工地）"></div>
+        <div class="field full"><label>工作內容</label><input type="text" id="r_workContent" placeholder="例如：吊掛鋼構、機具搬運"></div>
+        <div class="field full"><label>噸數 <span class="req">*</span></label><input type="number" id="r_tonnage" step="0.1" min="0" required placeholder="例如 25"></div>
+
+        <div class="field full"><label>車輛來源</label><select id="r_vehicleSource"><option value="own">自家車</option><option value="external">外調車</option></select></div>
+        <div class="field" id="externalVendorField" hidden><label>外調對象（同行）</label><input type="text" id="r_externalVendor" placeholder="外調的吊車行／司機名稱"></div>
+        <div class="field"><label>車牌</label><input type="text" id="r_vehicleNo" placeholder="選填"></div>
+
+        <div class="field"><label>司機</label><input type="text" id="r_driver" placeholder="你的姓名"></div>
+        <div class="field"><label>助手</label><input type="text" id="r_assistant" placeholder="選填"></div>
+
+        <div class="field full"><label>備註</label><textarea id="r_note" placeholder="選填，例如現場加班或有狀況要跟會計說"></textarea></div>
+      </div>
+      <button type="submit" class="btn btn-primary">送出回報</button>
+    </form>
+  </div>
+
+  <div id="successCard" class="success-card" hidden>
+    <h2>已送出，謝謝你！</h2>
+    <p>這筆工作已經送給會計核對，確認後就會正式建立訂單。</p>
+    <button type="button" class="btn btn-primary" id="reportAgainBtn">回報下一筆</button>
+  </div>
+
+  <div class="footer-note">吊車・請款系統｜本內容版權為 雅茜（Line：0983117041）所有。僅供個人使用，未經授權不得以任何形式複製、公開分享、轉載或轉售，違者將依法追究相關責任。</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+"use strict";
+
+const SUPABASE_URL = 'https://gvfflbyskurmesunbkyp.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_rUit87g_CnVh7elwzH3EOQ_pn5bSOkA';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+function timeSelectHtml(id){
+  let opts = '<option value="">—</option>';
+  for(let m=0; m<1440; m+=30){
+    const h = String(Math.floor(m/60)).padStart(2,'0');
+    const mm = String(m%60).padStart(2,'0');
+    const t = h+':'+mm;
+    opts += '<option value="'+t+'">'+t+'</option>';
+  }
+  return '<select id="'+id+'">'+opts+'</select>';
+}
+document.getElementById('amRow').innerHTML = timeSelectHtml('r_amStart')+'<span class="time-sep">至</span>'+timeSelectHtml('r_amEnd');
+document.getElementById('pmRow').innerHTML = timeSelectHtml('r_pmStart')+'<span class="time-sep">至</span>'+timeSelectHtml('r_pmEnd');
+document.getElementById('r_date').value = todayStr();
+
+const sourceEl = document.getElementById('r_vehicleSource');
+const vendorField = document.getElementById('externalVendorField');
+sourceEl.addEventListener('change', function(){
+  const isExternal = sourceEl.value === 'external';
+  vendorField.hidden = !isExternal;
+  if(!isExternal) document.getElementById('r_externalVendor').value = '';
+});
+
+document.getElementById('reportForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const form = e.target;
+  if(!form.reportValidity()) return;
+
+  const payload = {
+    clientName: document.getElementById('r_clientName').value.trim(),
+    date: document.getElementById('r_date').value,
+    docketNo: document.getElementById('r_docketNo').value.trim(),
+    amStart: document.getElementById('r_amStart').value,
+    amEnd: document.getElementById('r_amEnd').value,
+    pmStart: document.getElementById('r_pmStart').value,
+    pmEnd: document.getElementById('r_pmEnd').value,
+    location: document.getElementById('r_location').value.trim(),
+    workContent: document.getElementById('r_workContent').value.trim(),
+    tonnage: document.getElementById('r_tonnage').value,
+    vehicleSource: sourceEl.value,
+    externalVendor: sourceEl.value === 'external' ? document.getElementById('r_externalVendor').value.trim() : '',
+    vehicleNo: document.getElementById('r_vehicleNo').value.trim(),
+    driver: document.getElementById('r_driver').value.trim(),
+    assistant: document.getElementById('r_assistant').value.trim(),
+    note: document.getElementById('r_note').value.trim()
+  };
+
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '送出中…';
+
+  sb.from('driver_reports').insert({ id: uid(), payload: payload }).then(function(res){
+    submitBtn.disabled = false;
+    submitBtn.textContent = '送出回報';
+    if(res.error){
+      console.error(res.error);
+      alert('送出失敗，請檢查網路連線後再試一次。');
+      return;
+    }
+    document.getElementById('formCard').hidden = true;
+    document.getElementById('successCard').hidden = false;
+  });
+});
+
+document.getElementById('reportAgainBtn').addEventListener('click', function(){
+  document.getElementById('reportForm').reset();
+  document.getElementById('r_date').value = todayStr();
+  vendorField.hidden = true;
+  document.getElementById('successCard').hidden = true;
+  document.getElementById('formCard').hidden = false;
+});
+
+})();
+</script>
+</body>
+</html>
