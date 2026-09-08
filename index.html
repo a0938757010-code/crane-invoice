@@ -1845,7 +1845,8 @@ function openOrderModal(id, pendingReport){
   + '<div class="field-hint">與「客戶名稱」組合起來，是單價設定自動帶出金額的依據</div></div>'
   + '<datalist id="tonnageList">'+tonnageOptions.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
 
-  + '<div class="field full"><label>車輛來源</label><select id="f_vehicleSource"><option value="own"'+((v.vehicleSource||'own')==='own'?' selected':'')+'>自家車</option><option value="external"'+(v.vehicleSource==='external'?' selected':'')+'>外調車</option></select></div>'
+  + '<div class="field full"><label>車輛來源</label><select id="f_vehicleSource"><option value="own"'+((v.vehicleSource||'own')==='own'?' selected':'')+'>自家車</option><option value="external"'+(v.vehicleSource==='external'?' selected':'')+'>外調車</option></select>'
+  + '<div class="field-hint">自家車：由自己公司的吊車出車；外調車：自己公司的車都在忙時，改請同行支援，系統會另外記錄要付給同行的費用</div></div>'
   + '<div class="field" id="externalVendorField" style="'+(v.vehicleSource==='external'?'':'display:none')+'"><label>外調對象（同行）</label><input type="text" id="f_externalVendor" list="vendorList" value="'+escapeHtml(v.externalVendor||'')+'" placeholder="外調的吊車行／司機名稱"></div>'
   + '<div class="field" id="vendorCostField" style="'+(v.vehicleSource==='external'?'':'display:none')+'"><label>外調費用（需付給對方）</label><input type="number" id="f_vendorCost" step="1" min="0" value="'+escapeHtml(v.vendorCost||'')+'" placeholder="NT$（選填，同行固定收費可自動帶出）"></div>'
   + '<datalist id="vendorList">'+vendorOptions.map(n=>'<option value="'+escapeHtml(n)+'">').join('')+'</datalist>'
@@ -2086,8 +2087,10 @@ function bindOrderModalEvents(excludeId, order){
       amtEl.value = s.amount;
       amountAutoFilled = true;
       hintEl.textContent = s.exact ? '💡 已自動帶入該客戶、相同噸數的上次金額（NT$ '+fmtNum(s.amount,0)+'），可自行修改' : '💡 已帶入該客戶最近一筆金額作為參考（噸數不同），可自行修改';
-    } else if(force){
-      hintEl.textContent = '目前這個噸數尚未設定單價，也找不到歷史紀錄可參考，請手動輸入金額。';
+    } else if(tonnage !== '' && tonnage != null){
+      hintEl.textContent = '目前這個噸數尚未設定單價，也找不到歷史紀錄可參考。可以先到「單價設定」新增這個噸數的規則，或直接手動輸入金額。';
+    } else {
+      hintEl.textContent = '';
     }
     updateTaxPreview();
   }
