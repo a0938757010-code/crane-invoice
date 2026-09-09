@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>吊車・請款系統｜給吊車公司會計的對帳工具</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+:root{
+  --pink:#C9938A; --soft-pink:#E8C4BC; --light-pink:#F5E6E3;
+  --blue:#7A9BAD; --soft-blue:#B8CFDA; --light-blue:#E3EDF3;
+  --sage:#9AAE9B; --light-sage:#E8F0E8;
+  --cream:#FAF3EE; --bg:#FAFAF8; --dark:#37352F; --medium:#5A5248; --gray:#9B9A97;
+  --radius-lg:20px; --radius:14px; --radius-sm:10px;
+  --shadow-sm:0 1px 3px rgba(55,53,47,0.06);
+  --shadow:0 8px 24px rgba(55,53,47,0.10);
+  --border:1px solid rgba(55,53,47,0.09);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--dark);
+  font-family:'Noto Sans TC', -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0; font-weight:900; letter-spacing:0.01em;}
+p{margin:0;}
+a{color:inherit; text-decoration:none;}
+button{font-family:inherit; cursor:pointer;}
+.wrap{max-width:1080px; margin:0 auto; padding:0 20px;}
+
+/* nav */
+.nav{position:sticky; top:0; z-index:20; background:rgba(250,250,248,0.92); backdrop-filter:blur(6px); border-bottom:var(--border);}
+.nav-inner{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; max-width:1080px; margin:0 auto;}
+.brand{display:flex; align-items:center; gap:10px; font-weight:900; font-size:16px;}
+.brand-mark{width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--pink),var(--blue)); display:flex; align-items:center; justify-content:center;}
+.brand-mark svg{width:17px; height:17px; stroke:#fff;}
+.nav-links{display:flex; gap:26px; font-size:14px; font-weight:700; color:var(--medium);}
+.nav-links a:hover{color:var(--pink);}
+@media (max-width:640px){.nav-links{display:none;}}
+.nav-cta{background:var(--pink); color:#fff; padding:9px 18px; border-radius:999px; font-size:13.5px; font-weight:700; white-space:nowrap;}
+
+/* hero */
+.hero{background:linear-gradient(160deg,#2E2A26,#3F372F); color:#fff; padding:72px 20px 60px 20px; text-align:center;}
+.hero-tag{color:var(--soft-pink); font-weight:700; font-size:13px; letter-spacing:0.08em; margin-bottom:16px;}
+.hero h1{font-size:clamp(28px,5vw,44px); line-height:1.35; margin-bottom:18px;}
+.hero h1 .hl{color:var(--soft-pink);}
+.hero p{max-width:560px; margin:0 auto 30px auto; color:#D9D3CB; font-size:15.5px; line-height:1.8;}
+.hero-ctas{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+.btn{display:inline-flex; align-items:center; gap:8px; border:none; border-radius:999px; padding:14px 26px; font-size:15px; font-weight:700; cursor:pointer;}
+.btn-primary{background:var(--pink); color:#fff; box-shadow:0 6px 18px rgba(201,147,138,0.4);}
+.btn-primary:active{transform:scale(0.98);}
+.btn-outline{background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,0.35);}
+.stat-row{display:flex; justify-content:center; gap:48px; margin-top:44px; flex-wrap:wrap;}
+.stat-row div{text-align:center;}
+.stat-row .num{font-size:26px; font-weight:900; color:var(--soft-pink);}
+.stat-row .lab{font-size:12.5px; color:#B9B2A8; margin-top:4px;}
+
+/* sections */
+section{padding:64px 20px;}
+.section-tag{color:var(--pink); font-weight:700; font-size:13px; letter-spacing:0.06em; margin-bottom:10px;}
+.section-title{font-size:clamp(22px,3.4vw,30px); margin-bottom:14px;}
+.section-desc{color:var(--medium); font-size:14.5px; line-height:1.8; max-width:640px;}
+
+.problem-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:32px;}
+@media (max-width:720px){.problem-grid{grid-template-columns:1fr;}}
+.problem-card{border-radius:var(--radius-lg); padding:26px 24px;}
+.problem-card.bad{background:var(--light-pink);}
+.problem-card.good{background:var(--light-sage);}
+.problem-card .ptitle{font-weight:700; font-size:13px; margin-bottom:16px; display:flex; align-items:center; gap:8px;}
+.problem-card.bad .ptitle{color:#B4574C;}
+.problem-card.good .ptitle{color:#5F7A60;}
+.problem-card ul{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:12px;}
+.problem-card li{font-size:14px; line-height:1.6; color:var(--dark); padding-left:20px; position:relative;}
+.problem-card.bad li::before{content:"✕"; position:absolute; left:0; color:#B4574C; font-weight:700;}
+.problem-card.good li::before{content:"✓"; position:absolute; left:0; color:var(--sage); font-weight:700;}
+
+.feature-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:36px;}
+@media (max-width:860px){.feature-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:560px){.feature-grid{grid-template-columns:1fr;}}
+.feature-card{background:#fff; border:var(--border); border-radius:var(--radius-lg); padding:24px; box-shadow:var(--shadow-sm);}
+.feature-card .fnum{font-size:12px; font-weight:700; color:var(--gray); margin-bottom:10px;}
+.feature-card .ficon{font-size:22px; margin-bottom:10px;}
+.feature-card h3{font-size:15.5px; margin-bottom:8px;}
+.feature-card p{font-size:13px; color:var(--medium); line-height:1.7;}
+
+.cta-band{background:var(--cream); border-radius:var(--radius-lg); padding:46px 30px; text-align:center; margin:0 auto;}
+.cta-band h2{font-size:clamp(20px,3vw,26px); margin-bottom:12px;}
+.cta-band p{color:var(--medium); font-size:14px; margin-bottom:24px;}
+
+.faq{max-width:720px; margin:32px auto 0 auto; display:flex; flex-direction:column; gap:12px;}
+.faq-item{background:#fff; border:var(--border); border-radius:var(--radius); overflow:hidden;}
+.faq-q{padding:16px 20px; font-weight:700; font-size:14.5px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;}
+.faq-q .chev{transition:transform .2s ease; color:var(--gray); flex-shrink:0;}
+.faq-item.open .faq-q .chev{transform:rotate(180deg);}
+.faq-a{max-height:0; overflow:hidden; transition:max-height .25s ease;}
+.faq-item.open .faq-a{max-height:220px;}
+.faq-a p{padding:0 20px 16px 20px; font-size:13.5px; color:var(--medium); line-height:1.7;}
+
+/* contact modal */
+.contact-overlay{position:fixed; inset:0; background:rgba(55,53,47,0.5); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+.contact-overlay.open{display:flex;}
+.contact-panel{background:#fff; border-radius:var(--radius-lg); max-width:340px; width:100%; padding:28px 24px; text-align:center; box-shadow:var(--shadow);}
+.contact-panel h3{font-size:17px; margin-bottom:10px;}
+.contact-panel p{font-size:13.5px; color:var(--medium); line-height:1.7; margin-bottom:18px;}
+.contact-id{background:var(--light-pink); border-radius:var(--radius-sm); padding:14px; font-size:20px; font-weight:900; letter-spacing:0.04em; margin-bottom:16px;}
+.contact-panel .btn{width:100%; justify-content:center;}
+.contact-close{margin-top:12px; font-size:13px; color:var(--gray); font-weight:700; background:none; border:none;}
+
+footer{background:#2E2A26; color:#B9B2A8; padding:36px 20px; text-align:center; font-size:12px; line-height:1.9;}
+footer strong{color:#fff;}
+
+[hidden]{display:none!important;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h6M6 20V8l9-4v4M6 10h11a3 3 0 013 3v2h-4"/><path d="M16 15v5"/></svg></div>吊車・請款系統</div>
+    <div class="nav-links">
+      <a href="#problem">理念</a>
+      <a href="#features">核心功能</a>
+      <a href="#faq">常見問題</a>
+    </div>
+    <button class="nav-cta" data-action="open-contact">聯絡購買</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-tag">給吊車公司會計的對帳工具</div>
+    <h1>讓月底對帳，<br>不再靠<span class="hl">雙頭抄</span></h1>
+    <p>司機簽單回來，資料一次輸入就好，不用再手動抄進 Excel 又記一次本子。金額自動試算、月結對帳單一鍵開立，多台車、多客戶也不會打到瘋掉。</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary" data-action="open-contact">加 LINE 詢問／購買</button>
+      <a class="btn btn-outline" href="index.html" target="_blank" rel="noopener">看系統長怎樣 →</a>
+    </div>
+    <div class="stat-row">
+      <div><div class="num">獨立</div><div class="lab">每個買家資料庫互不共用</div></div>
+      <div><div class="num">即時</div><div class="lab">電腦手機雲端同步</div></div>
+      <div><div class="num">自動</div><div class="lab">司機回報、金額試算</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="problem">
+  <div class="wrap">
+    <div class="section-tag">為什麼需要這套系統</div>
+    <h2 class="section-title">資料抄兩次，就有兩倍出錯機會</h2>
+    <p class="section-desc">司機簽單回來，一筆一筆謄進 Excel，收入支出又另外記在本子上——月底要對帳的時候，還要自己重新加總、憑印象試算金額。</p>
+    <div class="problem-grid">
+      <div class="problem-card bad">
+        <div class="ptitle">常見的困境</div>
+        <ul>
+          <li>司機簽單要手動謄打進 Excel，又要另外記本子</li>
+          <li>不同噸數、不同客戶的單價全憑記憶或翻紀錄</li>
+          <li>月底要自己加總才知道誰欠錢、欠同行多少</li>
+          <li>車輛一多，一張一張手動輸入根本忙不過來</li>
+        </ul>
+      </div>
+      <div class="problem-card good">
+        <div class="ptitle">這套系統怎麼解決</div>
+        <ul>
+          <li>訂單資料一次輸入，自動同步雲端，電腦手機都看得到</li>
+          <li>依噸數、依客戶設定單價，金額自動試算</li>
+          <li>月結統計、應收應付一鍵看懂，直接開請款單</li>
+          <li>司機可自行回報工作，會計核對確認後直接建單</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" style="background:#fff;">
+  <div class="wrap">
+    <div class="section-tag">核心功能</div>
+    <h2 class="section-title">從接單到對帳，一站完成</h2>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="fnum">01</div><div class="ficon">📋</div><h3>訂單管理</h3><p>客戶、噸數、時段、車輛、司機一次記錄，支援自家車與外調車行。</p></div>
+      <div class="feature-card"><div class="fnum">02</div><div class="ficon">💰</div><h3>單價自動試算</h3><p>依噸數與客戶專屬報價自動算出金額，含跨夜加班時段設定。</p></div>
+      <div class="feature-card"><div class="fnum">03</div><div class="ficon">🧾</div><h3>月結對帳 / 請款單</h3><p>一鍵開立請款單、匯出 CSV，應收應付、同行互抵清清楚楚。</p></div>
+      <div class="feature-card"><div class="fnum">04</div><div class="ficon">🚚</div><h3>司機自主回報</h3><p>司機用專屬頁面回報工作，看不到營收等機密資料，會計核對後才建單。</p></div>
+      <div class="feature-card"><div class="fnum">05</div><div class="ficon">🔒</div><h3>資料獨立不共用</h3><p>每個買家各自獨立的雲端資料庫，公司之間資料完全隔離。</p></div>
+      <div class="feature-card"><div class="fnum">06</div><div class="ficon">☁️</div><h3>雲端即時同步</h3><p>電腦、手機同時使用，資料即時同步，不怕忘記帶紙本。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="section-tag">常見問題</div>
+    <h2 class="section-title">你可能會想知道</h2>
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q" data-action="toggle-faq">資料安全嗎？其他公司看得到我的資料嗎？<span class="chev">▾</span></div>
+        <div class="faq-a"><p>不會。每個買家都是獨立的雲端資料庫，彼此完全隔離，不會互相看到。</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" data-action="toggle-faq">司機看得到公司營收或其他司機的薪水嗎？<span class="chev">▾</span></div>
+        <div class="faq-a"><p>看不到。司機使用的是另一個專屬的回報頁面，完全不含營收、單價、客戶等機密資料。</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" data-action="toggle-faq">單價、加班規則可以自訂嗎？<span class="chev">▾</span></div>
+        <div class="faq-a"><p>可以，依噸數、依客戶都能個別設定，加班時段也能自訂（含跨夜情況）。</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" data-action="toggle-faq">要怎麼開始使用？<span class="chev">▾</span></div>
+        <div class="faq-a"><p>加 LINE 聯絡，說明貴公司的需求（車輛數、單價規則），確認後幫你建立專屬的獨立系統。</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>想幫公司省下對帳的時間嗎？</h2>
+      <p>加 LINE 聊聊貴公司的狀況，看看這套系統適不適合你們。</p>
+      <button class="btn btn-primary" data-action="open-contact">加 LINE 詢問／購買</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div><strong>吊車・請款系統</strong>｜給吊車公司會計的對帳工具</div>
+  <div style="margin-top:8px;">本內容版權為 雅茜（Line：0983117041）所有。僅供個人使用，未經授權不得以任何形式複製、公開分享、轉載或轉售，違者將依法追究相關責任。</div>
+</footer>
+
+<div class="contact-overlay" id="contactOverlay">
+  <div class="contact-panel">
+    <h3>加 LINE 聊聊</h3>
+    <p>複製下方 LINE ID，到 LINE 搜尋加好友，跟我們說說貴公司的需求。</p>
+    <div class="contact-id" id="lineIdText">0983117041</div>
+    <button class="btn btn-primary" id="copyLineBtn">複製 LINE ID</button>
+    <button class="contact-close" data-action="close-contact">關閉</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+document.addEventListener('click', function(e){
+  const actionEl = e.target.closest('[data-action]');
+  if(!actionEl) return;
+  const action = actionEl.getAttribute('data-action');
+  if(action === 'open-contact') document.getElementById('contactOverlay').classList.add('open');
+  else if(action === 'close-contact') document.getElementById('contactOverlay').classList.remove('open');
+  else if(action === 'toggle-faq'){
+    const item = actionEl.closest('.faq-item');
+    item.classList.toggle('open');
+  }
+});
+document.getElementById('contactOverlay').addEventListener('click', function(e){
+  if(e.target.id === 'contactOverlay') e.currentTarget.classList.remove('open');
+});
+document.getElementById('copyLineBtn').addEventListener('click', function(){
+  const text = document.getElementById('lineIdText').textContent;
+  const btn = this;
+  function done(){ btn.textContent = '已複製！'; setTimeout(()=>{ btn.textContent = '複製 LINE ID'; }, 1800); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(function(){
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try{ document.execCommand('copy'); }catch(e){}
+      document.body.removeChild(ta);
+      done();
+    });
+  }
+});
+})();
+</script>
+</body>
+</html>
