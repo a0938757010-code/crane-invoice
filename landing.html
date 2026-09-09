@@ -111,6 +111,13 @@ section{padding:64px 20px;}
 .price-card .btn{width:100%; justify-content:center;}
 .price-honest{margin-top:16px; font-size:11.5px; color:#B9B2A8; line-height:1.7; text-align:center;}
 
+/* purchase notice */
+.notice-block{background:var(--cream); border-radius:var(--radius-lg); padding:30px 28px; max-width:720px; margin:0 auto;}
+.notice-block h3{font-size:15px; margin-bottom:16px;}
+.notice-block ol{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px;}
+.notice-block li{font-size:12.5px; color:var(--medium); line-height:1.8;}
+.notice-block strong{color:var(--dark);}
+
 /* contact modal */
 .contact-overlay{position:fixed; inset:0; background:rgba(55,53,47,0.5); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
 .contact-overlay.open{display:flex;}
@@ -258,6 +265,23 @@ footer strong{color:#fff;}
       <h2>想幫公司省下對帳的時間嗎？</h2>
       <p>加 LINE 聊聊貴公司的狀況，看看這套系統適不適合你們。</p>
       <button class="btn btn-primary" data-action="open-contact">加 LINE 詢問／購買</button>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="notice-block">
+      <h3>購買須知</h3>
+      <ol>
+        <li><strong>產品性質：</strong>本產品為客製化部署的雲端記帳／對帳系統服務，非現貨商品。付款後，將協助買家建立專屬、獨立的雲端資料庫與系統網址。</li>
+        <li><strong>交付方式與時間：</strong>完成付款後，預計於 3 個工作天內完成專屬系統建置，並提供買家專屬的系統網址與基本操作教學。</li>
+        <li><strong>費用說明：</strong>NT$8,800 為一次性費用，包含系統建置服務與基本教學。不包含後續新增功能等客製化開發需求，如有額外功能需求，將另外報價討論。</li>
+        <li><strong>系統限制：</strong>本系統採用雲端免費方案，若連續 7 天未使用，系統可能自動暫停，重新喚醒約需數分鐘至數小時，屆時請告知賣方協助處理。</li>
+        <li><strong>退款政策：</strong>本產品為客製化建置之數位服務，一旦完成建置並交付專屬系統網址後，恕不接受退貨或退款；若系統本身有導致無法正常使用之嚴重錯誤，將負責修復至可正常使用為止。</li>
+        <li><strong>資料備份責任：</strong>系統內建「匯出備份」功能，建議買家定期自行匯出備份保存，雙方各自留存備份為佳。</li>
+        <li><strong>售後服務範圍：</strong>包含系統本身故障排除；不包含新增功能、大幅度規格變更等客製化需求。</li>
+      </ol>
     </div>
   </div>
 </section>
